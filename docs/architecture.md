@@ -45,9 +45,9 @@ omatut-voice (second trigger)
           |
  stop audio -> hide overlay -> capture focused monitor
           |
- local Voxtype transcript -> Responses API vision
+ local Voxtype transcript -> OmaTut vocabulary -> Responses API vision
           |
        overlay guide
 ```
 
-The temporary WAV and PNG are removed immediately after being read. `omatut-dismiss` cancels an active recording as well as hiding guidance. The launcher action is installed globally, while a compositor binding remains an explicit user choice.
+The temporary WAV and PNG are removed immediately after being read. `omatut-dismiss` cancels an active recording as well as hiding guidance. The launcher action is installed globally, while a compositor binding remains an explicit user choice. OmaTut passes a domain vocabulary hint to Voxtype and normalizes known phonetic aliases locally; it does not mutate the user's global Voxtype configuration.

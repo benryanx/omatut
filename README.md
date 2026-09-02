@@ -6,6 +6,7 @@ OmaTut is a screen-aware tutor for Omarchy, shaped around the interaction model 
 
 - A Navi-style, click-through Omarchy shell overlay with a buddy, target pulse, “Here” label, teaching bubble, shortcut card, and status pill.
 - A Navi-style two-press voice loop: trigger once to listen, trigger again to capture the focused monitor and ask.
+- An OmaTut-owned speech vocabulary that preserves critical Omarchy ecosystem names without changing global dictation settings.
 - Normalized visual target coordinates mapped back into the selected desktop region.
 - Explicit region capture with an on-screen preview before anything is sent.
 - Live Omarchy version, channel, active window, workspace, pointer, and keybinding context.

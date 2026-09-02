@@ -37,6 +37,7 @@ async function toggleVoice() {
   try {
     const result = await request("/api/voice/toggle", { method: "POST" });
     state.voiceRecording = result.state === "listening";
+    if (result.question) { ui.question.value = result.question; updateAsk(); }
     if (result.answer) { renderAnswer(result.answer); ui.answerCard.scrollIntoView({ behavior: "smooth", block: "start" }); }
   } catch (error) { showToast(error.message); await loadStatus(); }
   finally { state.voiceBusy = false; updateVoice(); }

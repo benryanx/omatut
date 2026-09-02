@@ -18,6 +18,7 @@
 
 - [x] Global voice action and optional user-chosen binding
 - [x] Two-press local voice interaction using Voxtype
+- [x] Omarchy vocabulary hints and phonetic alias correction
 - [x] Automatic focused-monitor screenshot with the overlay hidden
 - [x] Dismiss action and automatic next-step progression
 - [ ] Click-anywhere or context-safe Escape dismissal
