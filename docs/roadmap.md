@@ -23,13 +23,22 @@
 - [x] Dismiss action and automatic next-step progression
 - [ ] Click-anywhere or context-safe Escape dismissal
 
-## Slice 3 — Guided practice
+## Slice 3 — Learning companion
+
+- [x] First-run setup and preference controls
+- [x] Opt-in local learning journal
+- [x] Home dashboard with recent lessons and useful statistics
+- [x] On-demand AI learning summary
+- [x] Toggleable OpenAI TTS with voice preview and speed selection
+- [ ] Export learning journal
+
+## Slice 4 — Guided practice
 
 - [ ] Practice mode that verifies workspace and window actions
 - [ ] Short, explicit watch sessions with a permanent visible indicator
 - [ ] Local vision provider boundary
 
-## Slice 4 — Safe assistance
+## Slice 5 — Safe assistance
 
 - [ ] Read-only diagnostic recipes
 - [ ] Exact config diff previews

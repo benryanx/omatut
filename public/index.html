@@ -4,86 +4,64 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <title>OmaTut — Your Omarchy screen guide</title>
+  <title>OmaTut — Your Omarchy learning companion</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/omarchy-theme.css" id="omarchy-theme">
 </head>
 <body>
-  <main class="shell">
-    <nav>
-      <div class="wordmark"><span>✦</span> OmaTut</div>
-      <div class="nav-actions">
-        <button class="voice-button" id="voice-button" type="button"><span>●</span> Ask by voice</button>
-        <span class="local-badge"><i></i><span id="overlay-state">Checking overlay…</span></span>
-        <button class="icon-button" id="settings-button" aria-label="Settings" title="Settings">⚙</button>
-      </div>
-    </nav>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">✦</span><div><b>OmaTut</b><small>learning companion</small></div></div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <button class="active" data-view-target="home"><span>⌂</span> Home</button>
+        <button data-view-target="ask"><span>⌖</span> Ask OmaTut</button>
+        <button data-view-target="learning"><span>◫</span> Learning</button>
+      </nav>
+      <div class="sidebar-buddy" aria-hidden="true"><div class="buddy-orbit"></div><div class="buddy">✦</div><p>Let’s learn something useful.</p></div>
+      <div class="service-state"><i></i><span id="overlay-state">Checking guide…</span></div>
+    </aside>
 
-    <section class="hero">
-      <div class="buddy-stage" aria-hidden="true">
-        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-        <div class="buddy"><span>✦</span></div>
-        <div class="mini-bubble">I’ll show you where.</div>
-      </div>
-      <p class="eyebrow">AI SCREEN GUIDE FOR OMARCHY</p>
-      <h1>Your Omarchy guide<br><em>lives on your screen</em></h1>
-      <p class="hero-copy">Ask by voice like Navi, or point OmaTut at a specific area. It flies to the right control and shows the exact shortcut or next step.</p>
-    </section>
-
-    <section class="guide-card">
-      <div class="status-line">
-        <span><i class="status-dot"></i><b id="version">Omarchy</b></span>
-        <span id="window">Reading desktop context…</span>
-        <span id="binding-count"></span>
-      </div>
-
-      <div class="capture-panel" id="capture-panel">
-        <div class="empty-capture" id="empty-capture">
-          <div class="reticle"></div>
-          <div><h2>Choose something on screen</h2><p>You control exactly what OmaTut can see.</p></div>
-          <button class="primary" id="capture-button"><span>⌖</span> Select an area</button>
+    <main class="workspace">
+      <header class="topbar">
+        <div><p class="eyebrow" id="view-eyebrow">YOUR LEARNING SPACE</p><h1 id="view-title">Home</h1></div>
+        <div class="top-actions">
+          <button class="voice-button" id="voice-button" type="button"><span>●</span> Ask by voice</button>
+          <button class="icon-button" id="settings-button" aria-label="Settings" title="Settings">⚙</button>
         </div>
-        <div class="capture-preview hidden" id="capture-preview">
-          <img id="capture-image" alt="Selected screen region">
-          <div class="capture-actions"><span><i class="status-dot"></i> Ready to ask</span><button class="quiet" id="recapture-button">Choose again</button></div>
+      </header>
+
+      <section class="view active" data-view="home">
+        <article class="welcome-card">
+          <div><p class="eyebrow">WELCOME BACK</p><h2>Make Omarchy feel like yours.</h2><p id="welcome-copy">Ask about anything on your screen and OmaTut will keep the useful parts organized here.</p><button class="primary" data-go="ask">Ask something <span>↗</span></button></div>
+          <div class="constellation" aria-hidden="true"><span>✦</span><i></i><i></i><i></i></div>
+        </article>
+        <div class="stats-grid" aria-label="Learning statistics">
+          <article><span>Lessons</span><strong id="stat-lessons">0</strong><small>things explored</small></article><article><span>Shortcuts</span><strong id="stat-shortcuts">0</strong><small>keys discovered</small></article><article><span>Topics</span><strong id="stat-topics">0</strong><small>areas visited</small></article><article><span>Streak</span><strong id="stat-streak">0</strong><small>learning days</small></article>
         </div>
-      </div>
-
-      <form class="ask-panel" id="ask-form">
-        <label for="question">What do you want to know?</label>
-        <div class="ask-row">
-          <textarea id="question" maxlength="2000" rows="2" placeholder="How do I open this with a shortcut?" required></textarea>
-          <button class="primary ask" id="ask-button" disabled aria-label="Ask OmaTut">↗</button>
+        <div class="home-grid">
+          <article class="companion-card"><div class="card-heading"><span class="mini-mark">✦</span><div><p class="eyebrow">YOUR COMPANION</p><h2>A note from OmaTut</h2></div></div><p id="companion-summary">Once you’ve learned a few things, I’ll help connect the dots and suggest what to explore next.</p><button class="quiet" id="refresh-summary">Summarize my learning</button><small>Only saved lesson notes are sent when you press this button.</small></article>
+          <article class="recent-card"><div class="card-heading between"><div><p class="eyebrow">RECENT</p><h2>Latest learning</h2></div><button class="text-button" data-go="learning">View all</button></div><div id="recent-lessons" class="lesson-list compact"></div></article>
         </div>
-        <div class="suggestions">
-          <button type="button" data-question="What is this and what is the safest next step?">What is this?</button>
-          <button type="button" data-question="What shortcut should I use for this on my current Omarchy setup?">Show the shortcut</button>
-          <button type="button" data-question="Teach me how to do this myself, one step at a time.">Teach me</button>
-          <span class="privacy">Nothing is sent until you ask.</span>
-        </div>
-      </form>
-    </section>
+      </section>
 
-    <section class="answer-card hidden" id="answer-card" aria-live="polite">
-      <div class="answer-heading"><span class="teacher-icon">✦</span><div><p class="eyebrow">OMATUT</p><h2 id="answer-title">Here’s what to do</h2></div></div>
-      <p class="answer-text" id="answer-text"></p>
-      <div class="shortcut-card hidden" id="shortcut-card"><span>shortcut</span><div id="keycaps"></div></div>
-      <ol id="steps"></ol>
-      <p class="confidence" id="confidence"></p>
-    </section>
+      <section class="view" data-view="ask">
+        <article class="ask-intro"><div><p class="eyebrow">SCREEN-AWARE HELP</p><h2>What would you like to learn?</h2><p>Select a precise area, or use <kbd>SUPER</kbd> + <kbd>SHIFT</kbd> + <kbd>T</kbd> to ask by voice.</p></div><div class="context-line"><span id="version">Omarchy</span><span id="window">Reading desktop context…</span><span id="binding-count"></span></div></article>
+        <section class="guide-card">
+          <div class="capture-panel"><div class="empty-capture" id="empty-capture"><div class="reticle"></div><div><h3>Choose something on screen</h3><p>You control exactly what OmaTut can see.</p></div><button class="primary" id="capture-button">Select an area</button></div><div class="capture-preview hidden" id="capture-preview"><img id="capture-image" alt="Selected screen region"><div class="capture-actions"><span><i></i> Ready to ask</span><button class="quiet" id="recapture-button">Choose again</button></div></div></div>
+          <form class="ask-panel" id="ask-form"><label for="question">What do you want to know?</label><div class="ask-row"><textarea id="question" maxlength="2000" rows="2" placeholder="Teach me something useful about this…" required></textarea><button class="primary ask" id="ask-button" disabled aria-label="Ask OmaTut">↗</button></div><div class="suggestions"><button type="button" data-question="What is this and what is the safest next step?">What is this?</button><button type="button" data-question="What shortcut should I use for this on my current Omarchy setup?">Show the shortcut</button><button type="button" data-question="Teach me how to do this myself, one step at a time.">Teach me</button><span>Nothing is sent until you ask.</span></div></form>
+        </section>
+        <section class="answer-card hidden" id="answer-card" aria-live="polite"><div class="card-heading"><span class="mini-mark">✦</span><div><p class="eyebrow">OMATUT</p><h2>Here’s what to do</h2></div></div><p class="answer-text" id="answer-text"></p><div class="shortcut-card hidden" id="shortcut-card"><span>shortcut</span><div id="keycaps"></div></div><ol id="steps"></ol><p class="confidence" id="confidence"></p></section>
+      </section>
 
-    <footer><span>✦ OmaTut</span><span>Built for Omarchy · screen access is always explicit</span></footer>
-  </main>
+      <section class="view" data-view="learning"><div class="learning-head"><p id="learning-copy">Your useful discoveries live here—never your screenshots.</p><button class="quiet danger" id="clear-learning">Clear learning history</button></div><div id="learning-lessons" class="lesson-list full"></div></section>
+    </main>
+  </div>
 
-  <dialog id="settings-dialog">
-    <form method="dialog" class="settings-card" id="settings-form">
-      <div class="dialog-title"><div><p class="eyebrow">SETTINGS</p><h2>Connect OmaTut</h2></div><button class="icon-button" id="settings-close" type="button" aria-label="Close">×</button></div>
-      <label for="api-key">OpenAI API key</label>
-      <input id="api-key" type="password" autocomplete="off" placeholder="sk-…">
-      <p>Stored in your desktop keyring. Screenshots are sent only when you press Ask.</p>
-      <button class="primary" id="save-key" value="default">Save key</button>
-    </form>
+  <dialog id="onboarding-dialog" class="onboarding-dialog">
+    <form id="onboarding-form" class="onboarding-card"><div class="onboarding-hero"><div class="large-mark">✦</div><p class="eyebrow">MEET OMATUT</p><h2>Your guide now has a home.</h2><p>Learn on your screen, keep the useful parts, and build confidence with Omarchy at your own pace.</p></div><div class="setup-grid"><label class="setup-option"><input id="onboarding-history" type="checkbox" checked><span><b>Keep a learning journal</b><small>Save questions, answers, steps and shortcuts locally. Never screenshots.</small></span></label><label class="setup-option"><input id="onboarding-tts" type="checkbox"><span><b>Speak tutor instructions</b><small>Uses an AI-generated OpenAI voice. Turn it off anytime.</small></span></label></div><div class="voice-setup"><label for="onboarding-voice">Tutor voice</label><select id="onboarding-voice"><option value="coral">Coral · warm</option><option value="marin">Marin · clear</option><option value="cedar">Cedar · grounded</option><option value="sage">Sage · calm</option></select><button class="quiet" id="onboarding-preview" type="button">Preview voice</button></div><div id="onboarding-key-row"><label for="onboarding-api-key">OpenAI API key</label><input id="onboarding-api-key" type="password" autocomplete="off" placeholder="sk-…"><small>Stored in your desktop keyring.</small></div><div class="onboarding-foot"><div><kbd>SUPER</kbd> + <kbd>SHIFT</kbd> + <kbd>T</kbd><small>Press once to listen, again to ask.</small></div><button class="primary" type="submit">Start learning</button></div></form>
   </dialog>
+
+  <dialog id="settings-dialog"><form class="settings-card" id="settings-form"><div class="dialog-title"><div><p class="eyebrow">SETTINGS</p><h2>Make OmaTut yours</h2></div><button class="icon-button" id="settings-close" type="button" aria-label="Close">×</button></div><section><h3>OpenAI</h3><label for="api-key">Replace API key</label><input id="api-key" type="password" autocomplete="off" placeholder="Leave blank to keep the current key"><small>Stored securely in Secret Service.</small></section><section><h3>Learning</h3><label class="toggle-row"><span><b>Learning journal</b><small>Save structured notes locally after each answer.</small></span><input id="history-enabled" type="checkbox"></label></section><section><h3>Voice playback</h3><label class="toggle-row"><span><b>Speak instructions</b><small>AI-generated voice; audio is temporary.</small></span><input id="tts-enabled" type="checkbox"></label><div class="settings-inline"><select id="tts-voice"><option value="coral">Coral · warm</option><option value="marin">Marin · clear</option><option value="cedar">Cedar · grounded</option><option value="sage">Sage · calm</option></select><select id="tts-speed"><option value="0.9">Relaxed</option><option value="1">Natural</option><option value="1.1">Quick</option><option value="1.25">Fast</option></select><button class="quiet" id="settings-preview" type="button">Preview</button></div></section><p class="ai-disclosure">Voice playback is AI-generated and not a human voice.</p><button class="primary wide" type="submit">Save settings</button></form></dialog>
   <div class="toast hidden" id="toast" role="status"></div>
   <script src="/app.js" type="module"></script>
 </body>

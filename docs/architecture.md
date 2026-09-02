@@ -7,6 +7,7 @@
 3. Installed commands and current user configuration outrank remembered defaults.
 4. Observation is distinct from mutation. The MVP does not change system configuration.
 5. OmaTut binds only to localhost and never exposes credential-reading endpoints.
+6. Learning persistence contains structured text and context only—never screenshots, microphone recordings, or generated audio.
 
 ## MVP flow
 
@@ -51,3 +52,9 @@ omatut-voice (second trigger)
 ```
 
 The temporary WAV and PNG are removed immediately after being read. `omatut-dismiss` cancels an active recording as well as hiding guidance. The launcher action is installed globally, while a compositor binding remains an explicit user choice. OmaTut passes a domain vocabulary hint to Voxtype and normalizes known phonetic aliases locally; it does not mutate the user's global Voxtype configuration.
+
+## Companion and persistence
+
+The Chromium companion has three views: Home, Ask, and Learning. A versioned JSON store at `$XDG_STATE_HOME/omatut/learning.json` (or `~/.local/state/omatut/learning.json`) contains preferences and up to 500 structured lessons. Writes are atomic and user-only. History remains off until first-run consent and can be paused or cleared independently.
+
+Tutor speech is requested from OpenAI only when playback is enabled. WAV bytes are held in memory, written to a user-only temporary file for PipeWire playback, and deleted when playback finishes or is dismissed. AI companion summaries are explicit requests built from recent structured lessons; they use `store: false` and do not include captures.

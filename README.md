@@ -7,6 +7,8 @@ OmaTut is a screen-aware tutor for Omarchy, shaped around the interaction model 
 - A Navi-style, click-through Omarchy shell overlay with a buddy, target pulse, “Here” label, teaching bubble, shortcut card, and status pill.
 - A Navi-style two-press voice loop: trigger once to listen, trigger again to capture the focused monitor and ask.
 - An OmaTut-owned speech vocabulary that preserves critical Omarchy ecosystem names without changing global dictation settings.
+- A first-run companion setup, opt-in local learning journal, progress dashboard, and on-demand AI learning summaries.
+- Optional OpenAI voice playback with voice and speed controls; generated audio is removed after playback.
 - Normalized visual target coordinates mapped back into the selected desktop region.
 - Explicit region capture with an on-screen preview before anything is sent.
 - Live Omarchy version, channel, active window, workspace, pointer, and keybinding context.
@@ -19,7 +21,7 @@ The Chromium companion window handles setup, deliberate screen selection, and a 
 
 ## Run locally
 
-Requirements: Omarchy 4+, Node.js 24+, Chromium, `secret-tool`, Voxtype, PipeWire's `pw-record`, and the standard Omarchy screenshot tools.
+Requirements: Omarchy 4+, Node.js 24+, Chromium, `secret-tool`, Voxtype, PipeWire's `pw-record` and `pw-play`, and the standard Omarchy screenshot tools.
 
 ```bash
 cd /home/benpc1/Work/omatut
@@ -49,6 +51,12 @@ o.bind("SUPER + SHIFT + T", "Ask OmaTut", "omatut-voice")
 
 Check `omarchy menu keybindings --print` before adding it because future Omarchy releases or personal configuration may use the same key. After changing the file, validate it with `hyprctl reload` and `hyprctl configerrors`.
 
+## Learning companion
+
+The companion opens with a one-time setup for learning history and tutor voice. Home shows recent lessons and meaningful counts; Learning contains the full journal; Ask retains deliberate region capture. When enabled, the journal stores only the question, answer, steps, shortcut, topic, application name, workspace, and time in `~/.local/state/omatut/learning.json` with user-only permissions.
+
+Voice playback uses OpenAI's `gpt-4o-mini-tts` model and is off until enabled. The selected AI-generated voice speaks the explanation and ordered steps, can be stopped by dismissing OmaTut, and is never saved to the journal. Learning summaries are generated only when **Summarize my learning** is pressed.
+
 ## Privacy contract
 
 1. OmaTut captures only after an explicit action.
@@ -56,5 +64,7 @@ Check `omarchy menu keybindings --print` before adding it because future Omarchy
 3. Screen pixels are sent only after **Ask OmaTut** or the second `omatut-voice` trigger.
 4. Captures are kept in runtime memory only and expire after ten minutes.
 5. The OpenAI key is stored in the desktop keyring, never in this repository or a settings file.
+6. Learning history is opt-in, structured, local, and user-deletable; it never contains screen or microphone data.
+7. Learning notes are sent for an AI summary only after the user presses the summary button.
 
 Exact-name checks performed on 2 September 2026 found no `omatut` package on npm, PyPI, or AUR, and no exact `omarchy/omatut` GitHub repository. This is a practical collision check, not trademark clearance.
