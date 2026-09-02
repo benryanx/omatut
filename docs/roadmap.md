@@ -19,7 +19,8 @@
 - [x] Global voice action and optional user-chosen binding
 - [x] Two-press local voice interaction using Voxtype
 - [x] Automatic focused-monitor screenshot with the overlay hidden
-- [ ] Escape/dismiss action and next-step progression
+- [x] Dismiss action and automatic next-step progression
+- [ ] Click-anywhere or context-safe Escape dismissal
 
 ## Slice 3 — Guided practice
 

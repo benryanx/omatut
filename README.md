@@ -40,13 +40,13 @@ This installs user-owned desktop integration, a systemd user service, the launch
 
 Run `omatut-voice` once and speak your question. Run it again to stop listening. OmaTut then hides its overlay, captures only the focused monitor, transcribes locally with Voxtype, and sends the transcript plus screenshot for guidance. Run `omatut-dismiss` to cancel recording or hide the guide.
 
-The installer deliberately leaves the shortcut choice to you. To use `SUPER + CTRL + SPACE`, add this to `~/.config/hypr/bindings.lua`:
+The installer deliberately leaves the shortcut choice to you. `SUPER + SHIFT + T` is the recommended binding because it is mnemonic for Tutor and was unassigned in the stock Omarchy 4.0.2 catalogue:
 
 ```lua
-o.bind("SUPER + CTRL + SPACE", "Ask OmaTut", "omatut-voice")
+o.bind("SUPER + SHIFT + T", "Ask OmaTut", "omatut-voice")
 ```
 
-That key was unassigned in the installed Omarchy keybinding catalogue when this feature was built. After changing the file, validate it with `hyprctl reload` and `hyprctl configerrors`.
+Check `omarchy menu keybindings --print` before adding it because future Omarchy releases or personal configuration may use the same key. After changing the file, validate it with `hyprctl reload` and `hyprctl configerrors`.
 
 ## Privacy contract
 

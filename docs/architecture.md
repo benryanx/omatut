@@ -32,7 +32,7 @@ pointer, bindings      memory-only image
 
 The user-owned `benryanx.omatut` plugin registers the `omatut` IPC target inside the existing `omarchy-shell` process. The service sends `status`, `guide`, and `dismiss` messages. The QML plugin owns visual spotlighting, the buddy, the teaching bubble, and keycaps; the service owns capture, system context, model calls, policy, coordinate mapping, and ephemeral state.
 
-The overlay is a full-screen layer-shell surface with an empty input region. It cannot steal focus or block the target underneath it. This split also keeps arbitrary system commands out of the presentation layer and allows the overlay to disappear without interrupting an in-flight explanation.
+The overlay is a full-screen layer-shell surface with an empty input region. It cannot steal focus or block the target underneath it. This split also keeps arbitrary system commands out of the presentation layer and allows the overlay to disappear without interrupting an in-flight explanation. Multi-step answers automatically advance their highlighted step every 2.8 seconds, mirroring Navi's passive teaching flow.
 
 ## Voice flow
 

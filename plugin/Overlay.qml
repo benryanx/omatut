@@ -16,6 +16,7 @@ Item {
   property string label: "Here"
   property string explanation: ""
   property var steps: []
+  property int currentStep: 0
   property string shortcut: ""
   property real targetX: 0
   property real targetY: 0
@@ -30,9 +31,11 @@ Item {
     root.hasTarget = false
     root.explanation = ""
     root.steps = []
+    root.currentStep = 0
     root.shortcut = ""
     root.opened = true
     dismissTimer.stop()
+    stepTimer.stop()
   }
 
   function guide(payloadJson) {
@@ -42,22 +45,35 @@ Item {
     root.label = payload.label || "Here"
     root.explanation = payload.explanation || ""
     root.steps = payload.steps || []
+    root.currentStep = 0
     root.shortcut = payload.shortcut || ""
     root.hasTarget = payload.targetX !== null && payload.targetY !== null && payload.targetX !== undefined && payload.targetY !== undefined
     root.targetX = root.hasTarget ? Number(payload.targetX) : panel.width / 2
     root.targetY = root.hasTarget ? Number(payload.targetY) : panel.height / 2
-    root.statusMessage = "Guiding you · dismisses automatically"
+    root.statusMessage = root.steps.length > 1 ? "Step 1 of " + root.steps.length : "Guiding you · dismisses automatically"
     root.duration = Math.max(3000, Number(payload.duration || 14000))
     root.opened = true
     revealAnimation.restart()
+    if (root.steps.length > 1) stepTimer.restart()
     dismissTimer.restart()
   }
 
   function open(payloadJson) { guide(payloadJson) }
   function close() { dismiss() }
+  function nextStep() {
+    if (root.steps.length === 0) return
+    if (root.currentStep < root.steps.length - 1) {
+      root.currentStep += 1
+      root.statusMessage = "Step " + (root.currentStep + 1) + " of " + root.steps.length
+    } else {
+      stepTimer.stop()
+      root.statusMessage = "Guiding you · dismisses automatically"
+    }
+  }
   function dismiss() {
     root.opened = false
     dismissTimer.stop()
+    stepTimer.stop()
     if (root.shell && typeof root.shell.hide === "function")
       root.shell.hide((root.manifest && root.manifest.id) || "benryanx.omatut")
   }
@@ -66,6 +82,13 @@ Item {
     id: dismissTimer
     interval: root.duration
     onTriggered: root.dismiss()
+  }
+
+  Timer {
+    id: stepTimer
+    interval: 2800
+    repeat: true
+    onTriggered: root.nextStep()
   }
 
   SequentialAnimation {
@@ -79,6 +102,7 @@ Item {
     function status(payloadJson: string): string { root.status(payloadJson); return "ok" }
     function guide(payloadJson: string): string { root.guide(payloadJson); return "ok" }
     function dismiss(): string { root.dismiss(); return "ok" }
+    function next(): string { root.nextStep(); return "ok" }
     function state(): string { return root.opened ? root.mode : "closed" }
   }
 
@@ -261,13 +285,13 @@ Item {
                 width: Style.space(18)
                 height: width
                 radius: width / 2
-                color: index === 0 ? Color.accent : Util.alpha(Color.accent, 0.14)
-                border.width: index === 0 ? 0 : Math.max(1, Style.space(1))
+                color: index === root.currentStep ? Color.accent : Util.alpha(Color.accent, 0.14)
+                border.width: index === root.currentStep ? 0 : Math.max(1, Style.space(1))
                 border.color: Util.alpha(Color.accent, 0.35)
                 Text {
                   anchors.centerIn: parent
                   text: index + 1
-                  color: index === 0 ? Color.background : Color.accent
+                  color: index === root.currentStep ? Color.background : Color.accent
                   font.family: Style.font.family
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -279,7 +303,7 @@ Item {
                 text: modelData
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
-                color: index === 0 ? Color.popups.text : Util.alpha(Color.popups.text, 0.65)
+                color: index === root.currentStep ? Color.popups.text : Util.alpha(Color.popups.text, 0.65)
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
               }
