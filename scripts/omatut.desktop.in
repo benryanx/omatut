@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=OmaTut
+Comment=Learn Omarchy by pointing at your screen
+Exec=@LAUNCHER@
+Icon=omatut
+Terminal=false
+Categories=Education;Utility;
+StartupNotify=true
+

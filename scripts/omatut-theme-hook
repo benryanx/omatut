@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+curl --silent --fail --max-time 1 --request POST http://127.0.0.1:47841/api/theme/changed >/dev/null 2>&1 || true
+

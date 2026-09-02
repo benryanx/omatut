@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "benryanx.omatut",
+  "name": "OmaTut Screen Guide",
+  "version": "0.2.0",
+  "author": "Ben Ryan",
+  "description": "A click-through buddy, target marker, and teaching bubble for OmaTut",
+  "kinds": ["overlay"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "Overlay.qml"
+  }
+}
+
