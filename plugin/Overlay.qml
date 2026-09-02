@@ -13,6 +13,8 @@ Item {
   property bool opened: false
   property string mode: "idle"
   property string statusMessage: "Ask OmaTut about your screen"
+  property var thinkingWords: ["Analyzing the scene…", "Connecting the dots…", "Synthesizing a shortcut…", "Polishing the answer…"]
+  property int thinkingWordIndex: 0
   property string label: "Here"
   property string explanation: ""
   property var steps: []
@@ -27,7 +29,8 @@ Item {
     var payload = ({})
     try { payload = JSON.parse(payloadJson || "{}") } catch (e) {}
     root.mode = payload.mode || "thinking"
-    root.statusMessage = payload.message || "Looking at your screen…"
+    root.statusMessage = payload.message || (root.mode === "thinking" ? root.thinkingWords[0] : "OmaTut is ready")
+    root.thinkingWordIndex = Math.max(0, root.thinkingWords.indexOf(root.statusMessage))
     root.hasTarget = false
     root.explanation = ""
     root.steps = []
@@ -36,6 +39,8 @@ Item {
     root.opened = true
     dismissTimer.stop()
     stepTimer.stop()
+    if (root.mode === "thinking") thinkingTimer.restart()
+    else thinkingTimer.stop()
   }
 
   function guide(payloadJson) {
@@ -53,6 +58,7 @@ Item {
     root.statusMessage = root.steps.length > 1 ? "Step 1 of " + root.steps.length : "Guiding you · dismisses automatically"
     root.duration = Math.max(3000, Number(payload.duration || 14000))
     root.opened = true
+    thinkingTimer.stop()
     revealAnimation.restart()
     if (root.steps.length > 1) stepTimer.restart()
     dismissTimer.restart()
@@ -74,6 +80,7 @@ Item {
     root.opened = false
     dismissTimer.stop()
     stepTimer.stop()
+    thinkingTimer.stop()
     if (root.shell && typeof root.shell.hide === "function")
       root.shell.hide((root.manifest && root.manifest.id) || "benryanx.omatut")
   }
@@ -89,6 +96,16 @@ Item {
     interval: 2800
     repeat: true
     onTriggered: root.nextStep()
+  }
+
+  Timer {
+    id: thinkingTimer
+    interval: 1100
+    repeat: true
+    onTriggered: {
+      root.thinkingWordIndex = (root.thinkingWordIndex + 1) % root.thinkingWords.length
+      root.statusMessage = root.thinkingWords[root.thinkingWordIndex]
+    }
   }
 
   SequentialAnimation {

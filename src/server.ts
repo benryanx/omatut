@@ -14,6 +14,7 @@ import { transcribeRecording, VoiceRecorder } from "./voice.ts";
 import { LearningStore, type Preferences, type TtsVoice } from "./learning.ts";
 import { OpenAICompanion } from "./companion.ts";
 import { OpenAISpeech, SpeechPlayer } from "./speech.ts";
+import { playActivationPing } from "./sound.ts";
 
 const HOST = process.env.OMATUT_HOST || "127.0.0.1";
 const PORT = Number(process.env.OMATUT_PORT || 47841);
@@ -113,6 +114,7 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
       await stopSpeech();
       await voice.start();
       await showOverlayStatus("listening", "Listening… trigger OmaTut again to ask");
+      void playActivationPing();
       return json(res, { state: "listening" }, 202);
     }
     voiceBusy = true; let recordingPath: string | null = null;
@@ -140,7 +142,7 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
 }
 
 async function teach(question: string, capture: Capture, key: string): Promise<Record<string, unknown>> {
-  await stopSpeech(); await showOverlayStatus("thinking", "Looking at your screen…");
+  await stopSpeech(); await showOverlayStatus("thinking", "Analyzing the scene…");
   const context = await readDesktopContext();
   const answer = await new OpenAITutor(key).ask(question, capture, context);
   await showOverlayGuide(answer, capture);
