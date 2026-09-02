@@ -11,19 +11,17 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">✦</span><div><b>OmaTut</b><small>learning companion</small></div></div>
+      <div class="brand"><span class="brand-mark">✦</span><b>OmaTut</b></div>
       <nav class="side-nav" aria-label="Main navigation">
         <button class="active" data-view-target="home"><span>⌂</span> Home</button>
         <button data-view-target="ask"><span>⌖</span> Ask OmaTut</button>
-        <button data-view-target="learning"><span>◫</span> Learning</button>
+        <button data-view-target="learning"><span>◫</span> Learnings</button>
       </nav>
-      <div class="sidebar-buddy" aria-hidden="true"><div class="buddy-orbit"></div><div class="buddy">✦</div><p>Let’s learn something useful.</p></div>
-      <div class="service-state"><i></i><span id="overlay-state">Checking guide…</span></div>
     </aside>
 
     <main class="workspace">
       <header class="topbar">
-        <div><p class="eyebrow" id="view-eyebrow">YOUR LEARNING SPACE</p><h1 id="view-title">Home</h1></div>
+        <div><p class="eyebrow" id="view-eyebrow"></p><h1 id="view-title">Home</h1></div>
         <div class="top-actions">
           <button class="voice-button" id="voice-button" type="button"><span>●</span> Ask by voice</button>
           <button class="icon-button" id="settings-button" aria-label="Settings" title="Settings">⚙</button>
@@ -53,7 +51,7 @@
         <section class="answer-card hidden" id="answer-card" aria-live="polite"><div class="card-heading"><span class="mini-mark">✦</span><div><p class="eyebrow">OMATUT</p><h2>Here’s what to do</h2></div></div><p class="answer-text" id="answer-text"></p><div class="shortcut-card hidden" id="shortcut-card"><span>shortcut</span><div id="keycaps"></div></div><ol id="steps"></ol><p class="confidence" id="confidence"></p></section>
       </section>
 
-      <section class="view" data-view="learning"><div class="learning-head"><p id="learning-copy">Your useful discoveries live here—never your screenshots.</p><button class="quiet danger" id="clear-learning">Clear learning history</button></div><div id="learning-lessons" class="lesson-list full"></div></section>
+      <section class="view" data-view="learning"><div class="learning-head"><button class="quiet danger" id="clear-learning">Clear learning history</button></div><div id="learning-lessons" class="lesson-list full"></div></section>
     </main>
   </div>
 

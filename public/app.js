@@ -2,10 +2,10 @@ const $ = selector => document.querySelector(selector);
 const state = { captureId: null, keyConfigured: false, voiceRecording: false, voiceBusy: false, preferences: null, lessons: [] };
 
 const ui = {
-  title: $("#view-title"), eyebrow: $("#view-eyebrow"), overlayState: $("#overlay-state"),
+  title: $("#view-title"), eyebrow: $("#view-eyebrow"),
   version: $("#version"), window: $("#window"), bindingCount: $("#binding-count"), voice: $("#voice-button"),
   stats: { lessons: $("#stat-lessons"), shortcuts: $("#stat-shortcuts"), topics: $("#stat-topics"), streak: $("#stat-streak") },
-  recent: $("#recent-lessons"), learning: $("#learning-lessons"), learningCopy: $("#learning-copy"), welcomeCopy: $("#welcome-copy"),
+  recent: $("#recent-lessons"), learning: $("#learning-lessons"), welcomeCopy: $("#welcome-copy"),
   summary: $("#companion-summary"), refreshSummary: $("#refresh-summary"), clearLearning: $("#clear-learning"),
   emptyCapture: $("#empty-capture"), preview: $("#capture-preview"), image: $("#capture-image"),
   capture: $("#capture-button"), recapture: $("#recapture-button"), question: $("#question"), ask: $("#ask-button"), form: $("#ask-form"),
@@ -49,8 +49,6 @@ function reloadHomeFromLiveUpdate() {
 }
 
 function updateContext(status) {
-  ui.overlayState.textContent = status.overlayConnected ? "On-screen guide ready" : "Companion mode";
-  ui.overlayState.parentElement.classList.toggle("offline", !status.overlayConnected);
   const context = status.context;
   ui.version.textContent = [context.omarchy.version && `Omarchy ${context.omarchy.version}`, context.omarchy.channel].filter(Boolean).join(" · ") || "Omarchy";
   ui.window.textContent = context.activeWindow.title ? `${context.activeWindow.title}${context.activeWindow.workspace != null ? ` · workspace ${context.activeWindow.workspace}` : ""}` : "Desktop context available";
@@ -60,7 +58,6 @@ function updateContext(status) {
 function renderHome(home) {
   Object.entries(home.stats).forEach(([key, value]) => { if (ui.stats[key]) ui.stats[key].textContent = value; });
   ui.welcomeCopy.textContent = home.stats.lessons ? `You’ve captured ${home.stats.lessons} useful ${home.stats.lessons === 1 ? "lesson" : "lessons"}. Keep exploring and I’ll connect the patterns.` : "Ask about anything on your screen and OmaTut will keep the useful parts organized here.";
-  ui.learningCopy.textContent = home.preferences.historyEnabled ? "Your useful discoveries live here—never your screenshots." : "Learning history is off. Enable it in Settings to build your journal.";
   ui.clearLearning.disabled = home.lessons.length === 0;
   renderLessons(ui.recent, home.lessons.slice(0, 3), false); renderLessons(ui.learning, home.lessons, true);
   populateSettings(home.preferences);
@@ -96,7 +93,7 @@ function renderLessons(container, lessons, deletable) {
 function navigate(view) {
   document.querySelectorAll("[data-view]").forEach(section => section.classList.toggle("active", section.dataset.view === view));
   document.querySelectorAll("[data-view-target]").forEach(button => button.classList.toggle("active", button.dataset.viewTarget === view));
-  const labels = { home: ["YOUR LEARNING SPACE", "Home"], ask: ["SCREEN GUIDE", "Ask OmaTut"], learning: ["YOUR JOURNEY", "Learning"] };
+  const labels = { home: ["", "Home"], ask: ["SCREEN GUIDE", "Ask OmaTut"], learning: ["YOUR JOURNEY", "Learnings"] };
   [ui.eyebrow.textContent, ui.title.textContent] = labels[view] || labels.home;
 }
 
