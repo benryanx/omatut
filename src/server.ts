@@ -15,6 +15,7 @@ import { LearningStore, type Preferences, type TtsVoice } from "./learning.ts";
 import { OpenAICompanion } from "./companion.ts";
 import { OpenAISpeech, SpeechPlayer } from "./speech.ts";
 import { playActivationPing } from "./sound.ts";
+import { LiveUpdates } from "./live.ts";
 
 const HOST = process.env.OMATUT_HOST || "127.0.0.1";
 const PORT = Number(process.env.OMATUT_PORT || 47841);
@@ -27,6 +28,7 @@ const speechPlayer = new SpeechPlayer();
 let speechRequest: AbortController | null = null;
 let voiceBusy = false;
 const themeClients = new Set<ServerResponse>();
+const learningUpdates = new LiveUpdates();
 
 const server = createServer(async (req, res) => {
   try {
@@ -51,6 +53,10 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
     for (const client of themeClients) client.write("data: changed\n\n");
     return json(res, { ok: true });
   }
+  if (req.method === "GET" && url.pathname === "/api/learning/events") {
+    res.statusCode = 200; res.setHeader("Content-Type", "text/event-stream"); res.setHeader("Connection", "keep-alive"); res.setHeader("X-Accel-Buffering", "no");
+    learningUpdates.connect(res); req.once("close", () => learningUpdates.disconnect(res)); return;
+  }
   if (req.method === "GET" && url.pathname === "/api/status") {
     const [context, overlayConnected] = await Promise.all([readDesktopContext(), overlayAvailable()]);
     return json(res, { ready: true, keyConfigured: Boolean(getOpenAIKey()), captureReady: Boolean(captures.get()), overlayConnected, voice: { recording: voice.recording, busy: voiceBusy }, preferences: learning.snapshot().preferences, context });
@@ -59,11 +65,13 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
   if (req.method === "PUT" && url.pathname === "/api/preferences") {
     const preferences = learning.updatePreferences(await jsonBody(req) as Partial<Preferences>);
     if (!preferences.ttsEnabled) await stopSpeech();
+    learningUpdates.publish();
     return json(res, { preferences });
   }
   if (req.method === "POST" && url.pathname === "/api/onboarding") {
     const body = await jsonBody(req);
     const preferences = learning.updatePreferences({ ...body, onboardingComplete: true } as Partial<Preferences>);
+    learningUpdates.publish();
     return json(res, { preferences });
   }
   if (req.method === "POST" && url.pathname === "/api/speech/preview") {
@@ -79,11 +87,11 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
     return json(res, { summary: await new OpenAICompanion(key).summarize(snapshot.lessons) });
   }
   if (req.method === "DELETE" && url.pathname === "/api/learning") {
-    learning.clearLessons(); return json(res, { ok: true });
+    learning.clearLessons(); learningUpdates.publish(); return json(res, { ok: true });
   }
   if (req.method === "DELETE" && url.pathname.startsWith("/api/learning/")) {
     const id = decodeURIComponent(url.pathname.slice("/api/learning/".length));
-    return json(res, { ok: learning.deleteLesson(id) });
+    const deleted = learning.deleteLesson(id); if (deleted) learningUpdates.publish(); return json(res, { ok: deleted });
   }
   if (req.method === "PUT" && url.pathname === "/api/settings/openai-key") {
     const body = await jsonBody(req); await setOpenAIKey(String(body.key || "")); return json(res, { ok: true });
@@ -148,6 +156,7 @@ async function teach(question: string, capture: Capture, key: string): Promise<R
   const preferences = learning.snapshot().preferences;
   await showOverlayGuide(answer, capture, preferences.guideTiming);
   const lesson = learning.addLesson(question, answer, context);
+  if (lesson) learningUpdates.publish();
   if (preferences.ttsEnabled) void speakText(spokenAnswer(answer), preferences, key).catch(error => console.error("Speech playback failed:", error));
   return { answer, context, lesson };
 }

@@ -37,6 +37,17 @@ async function reloadHome() {
   const home = await request("/api/home"); state.preferences = home.preferences; state.lessons = home.lessons; renderHome(home);
 }
 
+let liveRefreshQueued = false;
+function reloadHomeFromLiveUpdate() {
+  if (liveRefreshQueued) return;
+  liveRefreshQueued = true;
+  queueMicrotask(async () => {
+    try { await reloadHome(); }
+    catch (error) { console.warn("Could not refresh OmaTut learning:", error); }
+    finally { liveRefreshQueued = false; }
+  });
+}
+
 function updateContext(status) {
   ui.overlayState.textContent = status.overlayConnected ? "On-screen guide ready" : "Companion mode";
   ui.overlayState.parentElement.classList.toggle("offline", !status.overlayConnected);
@@ -180,4 +191,5 @@ function capitalize(value) { return value ? value[0].toUpperCase() + value.slice
 let toastTimer; function showToast(message) { clearTimeout(toastTimer); ui.toast.textContent = message; ui.toast.classList.remove("hidden"); toastTimer = setTimeout(() => ui.toast.classList.add("hidden"), 5000); }
 
 const events = new EventSource("/api/theme/events"); events.onmessage = event => { if (event.data === "changed") $("#omarchy-theme").href = `/omarchy-theme.css?t=${Date.now()}`; };
+const learningEvents = new EventSource("/api/learning/events"); learningEvents.onmessage = event => { if (event.data === "updated") reloadHomeFromLiveUpdate(); };
 loadApp();

@@ -55,7 +55,7 @@ Check `omarchy menu keybindings --print` before adding these because future Omar
 
 ## Learning companion
 
-The companion opens with a one-time setup for learning history and tutor voice. Home shows recent lessons and meaningful counts; Learning contains the full journal; Ask retains deliberate region capture. When enabled, the journal stores only the question, answer, steps, shortcut, topic, application name, workspace, and time in `~/.local/state/omatut/learning.json` with user-only permissions.
+The companion opens with a one-time setup for learning history and tutor voice. Home shows recent lessons and meaningful counts; Learning contains the full journal; Ask retains deliberate region capture. An open companion refreshes its journal and statistics immediately after a voice or screen-guided lesson completes. When enabled, the journal stores only the question, answer, steps, shortcut, topic, application name, workspace, and time in `~/.local/state/omatut/learning.json` with user-only permissions.
 
 Voice playback uses OpenAI's `gpt-4o-mini-tts` model and is off until enabled. The selected AI-generated voice speaks the explanation and ordered steps, can be stopped by dismissing OmaTut, and is never saved to the journal. Guide timing can be adaptive, fixed, or persistent; hovering pauses a running timer. Learning summaries are generated only when **Summarize my learning** is pressed.
 
