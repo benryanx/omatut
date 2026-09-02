@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { CommandRunner } from "./command.ts";
 import { runCommand } from "./command.ts";
-import { normalizeTranscript, VOCABULARY_PROMPT } from "./vocabulary.ts";
+import { extractTranscriptText, normalizeTranscript, VOCABULARY_PROMPT } from "./vocabulary.ts";
 
 interface Recording {
   path: string;
@@ -58,7 +58,7 @@ export class VoiceRecorder {
 
 export async function transcribeRecording(path: string, run: CommandRunner = runCommand): Promise<string> {
   try {
-    const transcript = normalizeTranscript((await run("voxtype", ["--initial-prompt", VOCABULARY_PROMPT, "transcribe", path])).stdout);
+    const transcript = normalizeTranscript(extractTranscriptText((await run("voxtype", ["--initial-prompt", VOCABULARY_PROMPT, "transcribe", path])).stdout));
     if (!transcript) throw new Error("I couldn't hear a question. Try speaking closer to the microphone.");
     return transcript;
   } finally {

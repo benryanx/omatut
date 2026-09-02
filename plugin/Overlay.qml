@@ -23,7 +23,39 @@ Item {
   property real targetX: 0
   property real targetY: 0
   property bool hasTarget: false
-  property int duration: 14000
+  property int duration: 18000
+  property int remainingDuration: 18000
+  property double dismissStartedAt: 0
+  property bool answerHovered: false
+
+  function guideStatus() {
+    if (root.duration === 0) return "Stays open · Esc to close"
+    if (root.answerHovered) return "Paused · move away to resume · Esc to close"
+    var progress = root.steps.length > 1 ? "Step " + (root.currentStep + 1) + " of " + root.steps.length : "Guiding you"
+    return progress + " · hover to pause · Esc to close"
+  }
+
+  function startDismissCountdown() {
+    dismissTimer.stop()
+    root.remainingDuration = root.duration
+    if (root.duration <= 0) return
+    root.dismissStartedAt = Date.now()
+    dismissTimer.interval = root.remainingDuration
+    dismissTimer.start()
+  }
+
+  function pauseDismissCountdown() {
+    if (!dismissTimer.running) return
+    root.remainingDuration = Math.max(1, root.remainingDuration - (Date.now() - root.dismissStartedAt))
+    dismissTimer.stop()
+  }
+
+  function resumeDismissCountdown() {
+    if (root.mode !== "guide" || root.duration <= 0 || root.remainingDuration <= 0) return
+    root.dismissStartedAt = Date.now()
+    dismissTimer.interval = root.remainingDuration
+    dismissTimer.start()
+  }
 
   function status(payloadJson) {
     var payload = ({})
@@ -55,13 +87,14 @@ Item {
     root.hasTarget = payload.targetX !== null && payload.targetY !== null && payload.targetX !== undefined && payload.targetY !== undefined
     root.targetX = root.hasTarget ? Number(payload.targetX) : panel.width / 2
     root.targetY = root.hasTarget ? Number(payload.targetY) : panel.height / 2
-    root.statusMessage = root.steps.length > 1 ? "Step 1 of " + root.steps.length : "Guiding you · dismisses automatically"
-    root.duration = Math.max(3000, Number(payload.duration || 14000))
+    root.duration = payload.duration === undefined ? 18000 : Math.max(0, Number(payload.duration))
+    root.answerHovered = false
+    root.statusMessage = root.guideStatus()
     root.opened = true
     thinkingTimer.stop()
     revealAnimation.restart()
     if (root.steps.length > 1) stepTimer.restart()
-    dismissTimer.restart()
+    root.startDismissCountdown()
   }
 
   function open(payloadJson) { guide(payloadJson) }
@@ -70,10 +103,10 @@ Item {
     if (root.steps.length === 0) return
     if (root.currentStep < root.steps.length - 1) {
       root.currentStep += 1
-      root.statusMessage = "Step " + (root.currentStep + 1) + " of " + root.steps.length
+      root.statusMessage = root.guideStatus()
     } else {
       stepTimer.stop()
-      root.statusMessage = "Guiding you · dismisses automatically"
+      root.statusMessage = root.guideStatus()
     }
   }
   function dismiss() {
@@ -132,7 +165,7 @@ Item {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
-    mask: Region {}
+    mask: Region { item: root.mode === "guide" ? bubble : null }
 
     Item {
       id: guideLayer
@@ -241,6 +274,16 @@ Item {
         color: Util.alpha(Color.popups.background, 0.96)
         borderSpec: Border.surfaceSpec("popups", "border", Color.popups.border, Math.max(1, Style.space(1)))
         radius: Style.cornerRadius
+
+        HoverHandler {
+          id: answerHover
+          onHoveredChanged: {
+            root.answerHovered = hovered
+            if (hovered) root.pauseDismissCountdown()
+            else root.resumeDismissCountdown()
+            root.statusMessage = root.guideStatus()
+          }
+        }
 
         Column {
           id: bubbleContent

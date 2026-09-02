@@ -145,9 +145,9 @@ async function teach(question: string, capture: Capture, key: string): Promise<R
   await stopSpeech(); await showOverlayStatus("thinking", "Analyzing the scene…");
   const context = await readDesktopContext();
   const answer = await new OpenAITutor(key).ask(question, capture, context);
-  await showOverlayGuide(answer, capture);
-  const lesson = learning.addLesson(question, answer, context);
   const preferences = learning.snapshot().preferences;
+  await showOverlayGuide(answer, capture, preferences.guideTiming);
+  const lesson = learning.addLesson(question, answer, context);
   if (preferences.ttsEnabled) void speakText(spokenAnswer(answer), preferences, key).catch(error => console.error("Speech playback failed:", error));
   return { answer, context, lesson };
 }

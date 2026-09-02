@@ -4,9 +4,12 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { DesktopContext } from "./omarchy.ts";
 import type { TutorAnswer } from "./tutor.ts";
+import { extractTranscriptText } from "./vocabulary.ts";
 
 export const TTS_VOICES = ["coral", "marin", "cedar", "sage", "alloy", "ash", "ballad", "echo", "fable", "nova", "onyx", "shimmer", "verse"] as const;
 export type TtsVoice = typeof TTS_VOICES[number];
+export const GUIDE_TIMINGS = ["adaptive", "brief", "relaxed", "persistent"] as const;
+export type GuideTiming = typeof GUIDE_TIMINGS[number];
 
 export interface Preferences {
   onboardingComplete: boolean;
@@ -14,6 +17,7 @@ export interface Preferences {
   ttsEnabled: boolean;
   ttsVoice: TtsVoice;
   ttsSpeed: number;
+  guideTiming: GuideTiming;
 }
 
 export interface Lesson {
@@ -29,7 +33,7 @@ export interface Lesson {
 }
 
 interface LearningData {
-  version: 1;
+  version: 2;
   preferences: Preferences;
   lessons: Lesson[];
 }
@@ -42,8 +46,8 @@ export interface LearningStats {
 }
 
 const defaults: LearningData = {
-  version: 1,
-  preferences: { onboardingComplete: false, historyEnabled: false, ttsEnabled: false, ttsVoice: "coral", ttsSpeed: 1 },
+  version: 2,
+  preferences: { onboardingComplete: false, historyEnabled: false, ttsEnabled: false, ttsVoice: "coral", ttsSpeed: 1, guideTiming: "adaptive" },
   lessons: [],
 };
 
@@ -68,6 +72,7 @@ export class LearningStore {
       ...(typeof input.ttsEnabled === "boolean" ? { ttsEnabled: input.ttsEnabled } : {}),
       ...(typeof input.ttsVoice === "string" && TTS_VOICES.includes(input.ttsVoice as TtsVoice) ? { ttsVoice: input.ttsVoice as TtsVoice } : {}),
       ...(typeof input.ttsSpeed === "number" && Number.isFinite(input.ttsSpeed) ? { ttsSpeed: Math.max(0.75, Math.min(1.5, input.ttsSpeed)) } : {}),
+      ...(typeof input.guideTiming === "string" && GUIDE_TIMINGS.includes(input.guideTiming as GuideTiming) ? { guideTiming: input.guideTiming as GuideTiming } : {}),
     };
     data.preferences = next; this.write(data); return { ...next };
   }
@@ -97,11 +102,13 @@ export class LearningStore {
     if (!existsSync(this.path)) return structuredClone(defaults);
     try {
       const value = JSON.parse(readFileSync(this.path, "utf8")) as Partial<LearningData>;
-      return {
-        version: 1,
+      const data: LearningData = {
+        version: 2,
         preferences: normalizePreferences(value.preferences),
         lessons: Array.isArray(value.lessons) ? value.lessons.map(sanitizeLesson).filter((lesson): lesson is Lesson => lesson !== null).slice(0, 500) : [],
       };
+      if (value.version !== 2) this.write(data);
+      return data;
     } catch { return structuredClone(defaults); }
   }
 
@@ -137,6 +144,7 @@ function normalizePreferences(value: unknown): Preferences {
     ttsEnabled: typeof input.ttsEnabled === "boolean" ? input.ttsEnabled : false,
     ttsVoice: typeof input.ttsVoice === "string" && TTS_VOICES.includes(input.ttsVoice as TtsVoice) ? input.ttsVoice as TtsVoice : "coral",
     ttsSpeed: typeof input.ttsSpeed === "number" && Number.isFinite(input.ttsSpeed) ? Math.max(0.75, Math.min(1.5, input.ttsSpeed)) : 1,
+    guideTiming: typeof input.guideTiming === "string" && GUIDE_TIMINGS.includes(input.guideTiming as GuideTiming) ? input.guideTiming as GuideTiming : "adaptive",
   };
 }
 
@@ -145,11 +153,15 @@ function sanitizeLesson(value: unknown): Lesson | null {
   const lesson = value as Partial<Lesson>;
   if (typeof lesson.id !== "string" || typeof lesson.createdAt !== "string" || typeof lesson.question !== "string" || typeof lesson.answer !== "string") return null;
   return {
-    id: lesson.id, createdAt: lesson.createdAt, question: lesson.question, answer: lesson.answer,
+    id: lesson.id, createdAt: lesson.createdAt, question: cleanStoredQuestion(lesson.question), answer: lesson.answer,
     steps: Array.isArray(lesson.steps) ? lesson.steps.filter((step): step is string => typeof step === "string").slice(0, 6) : [],
     shortcut: typeof lesson.shortcut === "string" ? lesson.shortcut : null,
     topic: typeof lesson.topic === "string" ? lesson.topic : "Omarchy",
     app: typeof lesson.app === "string" ? lesson.app : null,
     workspace: typeof lesson.workspace === "string" || typeof lesson.workspace === "number" ? lesson.workspace : null,
   };
+}
+
+function cleanStoredQuestion(question: string): string {
+  return /Loading audio file:|Transcription completed in/.test(question) ? extractTranscriptText(question) : question;
 }

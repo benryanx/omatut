@@ -21,7 +21,8 @@
 - [x] Omarchy vocabulary hints and phonetic alias correction
 - [x] Automatic focused-monitor screenshot with the overlay hidden
 - [x] Dismiss action and automatic next-step progression
-- [ ] Click-anywhere or context-safe Escape dismissal
+- [x] Context-safe Escape dismissal and hover-paused adaptive guide timing
+- [ ] Optional click-anywhere dismissal
 
 ## Slice 3 — Learning companion
 

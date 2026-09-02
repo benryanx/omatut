@@ -48,15 +48,16 @@ The installer deliberately leaves the shortcut choice to you. `SUPER + SHIFT + T
 
 ```lua
 o.bind("SUPER + SHIFT + T", "Ask OmaTut", "omatut-voice")
+o.bind("ESCAPE", nil, "omatut-dismiss", { non_consuming = true })
 ```
 
-Check `omarchy menu keybindings --print` before adding it because future Omarchy releases or personal configuration may use the same key. After changing the file, validate it with `hyprctl reload` and `hyprctl configerrors`.
+Check `omarchy menu keybindings --print` before adding these because future Omarchy releases or personal configuration may use the same keys. The non-consuming Escape hook lets the active application continue receiving Escape and only dismisses OmaTut when its overlay is open. After changing the file, validate it with `hyprctl reload` and `hyprctl configerrors`.
 
 ## Learning companion
 
 The companion opens with a one-time setup for learning history and tutor voice. Home shows recent lessons and meaningful counts; Learning contains the full journal; Ask retains deliberate region capture. When enabled, the journal stores only the question, answer, steps, shortcut, topic, application name, workspace, and time in `~/.local/state/omatut/learning.json` with user-only permissions.
 
-Voice playback uses OpenAI's `gpt-4o-mini-tts` model and is off until enabled. The selected AI-generated voice speaks the explanation and ordered steps, can be stopped by dismissing OmaTut, and is never saved to the journal. Learning summaries are generated only when **Summarize my learning** is pressed.
+Voice playback uses OpenAI's `gpt-4o-mini-tts` model and is off until enabled. The selected AI-generated voice speaks the explanation and ordered steps, can be stopped by dismissing OmaTut, and is never saved to the journal. Guide timing can be adaptive, fixed, or persistent; hovering pauses a running timer. Learning summaries are generated only when **Summarize my learning** is pressed.
 
 ## Privacy contract
 

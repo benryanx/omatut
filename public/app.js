@@ -11,7 +11,7 @@ const ui = {
   capture: $("#capture-button"), recapture: $("#recapture-button"), question: $("#question"), ask: $("#ask-button"), form: $("#ask-form"),
   answerCard: $("#answer-card"), answerText: $("#answer-text"), steps: $("#steps"), shortcutCard: $("#shortcut-card"), keycaps: $("#keycaps"), confidence: $("#confidence"),
   onboarding: $("#onboarding-dialog"), onboardingForm: $("#onboarding-form"), onboardingHistory: $("#onboarding-history"), onboardingTts: $("#onboarding-tts"), onboardingVoice: $("#onboarding-voice"), onboardingKey: $("#onboarding-api-key"), onboardingKeyRow: $("#onboarding-key-row"), onboardingPreview: $("#onboarding-preview"),
-  settings: $("#settings-dialog"), settingsButton: $("#settings-button"), settingsClose: $("#settings-close"), settingsForm: $("#settings-form"), apiKey: $("#api-key"), historyEnabled: $("#history-enabled"), ttsEnabled: $("#tts-enabled"), ttsVoice: $("#tts-voice"), ttsSpeed: $("#tts-speed"), settingsPreview: $("#settings-preview"),
+  settings: $("#settings-dialog"), settingsButton: $("#settings-button"), settingsClose: $("#settings-close"), settingsForm: $("#settings-form"), apiKey: $("#api-key"), historyEnabled: $("#history-enabled"), guideTiming: $("#guide-timing"), ttsEnabled: $("#tts-enabled"), ttsVoice: $("#tts-voice"), ttsSpeed: $("#tts-speed"), settingsPreview: $("#settings-preview"),
   toast: $("#toast"),
 };
 
@@ -64,17 +64,18 @@ function renderLessons(container, lessons, deletable) {
   }
   lessons.forEach(lesson => {
     const article = document.createElement("article"); article.className = "lesson-item";
-    const meta = document.createElement("div"); meta.className = "lesson-meta";
-    const topic = document.createElement("span"); topic.textContent = lesson.topic;
-    const time = document.createElement("time"); time.dateTime = lesson.createdAt; time.textContent = relativeTime(lesson.createdAt);
-    meta.append(topic, time);
     const question = document.createElement("h3"); question.textContent = lesson.question;
     const answer = document.createElement("p"); answer.textContent = lesson.answer;
-    article.append(meta, question, answer);
-    if (lesson.shortcut) { const shortcut = document.createElement("kbd"); shortcut.className = "lesson-shortcut"; shortcut.textContent = lesson.shortcut; article.append(shortcut); }
+    if (!deletable) {
+      const meta = document.createElement("div"); meta.className = "lesson-meta";
+      const topic = document.createElement("span"); topic.textContent = lesson.topic;
+      const time = document.createElement("time"); time.dateTime = lesson.createdAt; time.textContent = relativeTime(lesson.createdAt);
+      meta.append(topic, time); article.append(meta);
+    }
+    article.append(question, answer);
+    if (!deletable && lesson.shortcut) { const shortcut = document.createElement("kbd"); shortcut.className = "lesson-shortcut"; shortcut.textContent = lesson.shortcut; article.append(shortcut); }
     if (deletable) {
       const details = document.createElement("div"); details.className = "lesson-details";
-      if (lesson.steps.length) { const list = document.createElement("ol"); lesson.steps.forEach(step => { const item = document.createElement("li"); item.textContent = step; list.append(item); }); details.append(list); }
       const remove = document.createElement("button"); remove.className = "delete-lesson"; remove.type = "button"; remove.dataset.lessonId = lesson.id; remove.textContent = "Remove"; details.append(remove); article.append(details);
     }
     container.append(article);
@@ -126,7 +127,7 @@ function renderAnswer(answer) {
 }
 
 function openSettings() { if (state.preferences) populateSettings(state.preferences); ui.settings.showModal(); }
-function populateSettings(preferences) { ui.historyEnabled.checked = preferences.historyEnabled; ui.ttsEnabled.checked = preferences.ttsEnabled; ui.ttsVoice.value = preferences.ttsVoice; ui.ttsSpeed.value = String(preferences.ttsSpeed); }
+function populateSettings(preferences) { ui.historyEnabled.checked = preferences.historyEnabled; ui.guideTiming.value = preferences.guideTiming || "adaptive"; ui.ttsEnabled.checked = preferences.ttsEnabled; ui.ttsVoice.value = preferences.ttsVoice; ui.ttsSpeed.value = String(preferences.ttsSpeed); }
 
 async function saveKey(input) {
   if (!input.value.trim()) return;
@@ -149,7 +150,7 @@ ui.onboardingForm.addEventListener("submit", async event => {
 
 ui.settingsForm.addEventListener("submit", async event => {
   event.preventDefault(); const button = event.submitter; setBusy(button, true, "Saving…");
-  try { await saveKey(ui.apiKey); await request("/api/preferences", { method: "PUT", body: JSON.stringify({ historyEnabled: ui.historyEnabled.checked, ttsEnabled: ui.ttsEnabled.checked, ttsVoice: ui.ttsVoice.value, ttsSpeed: Number(ui.ttsSpeed.value) }) }); ui.settings.close(); await reloadHome(); showToast("Settings saved."); }
+  try { await saveKey(ui.apiKey); await request("/api/preferences", { method: "PUT", body: JSON.stringify({ historyEnabled: ui.historyEnabled.checked, guideTiming: ui.guideTiming.value, ttsEnabled: ui.ttsEnabled.checked, ttsVoice: ui.ttsVoice.value, ttsSpeed: Number(ui.ttsSpeed.value) }) }); ui.settings.close(); await reloadHome(); showToast("Settings saved."); }
   catch (error) { showToast(error.message); }
   finally { setBusy(button, false, "Save settings"); }
 });

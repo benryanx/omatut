@@ -1,6 +1,6 @@
 {
   "name": "omatut",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "A screen-aware, context-aware tutor for Omarchy.",

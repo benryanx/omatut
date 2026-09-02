@@ -21,6 +21,15 @@ export const OMATUT_VOCABULARY: readonly VocabularyEntry[] = [
 
 export const VOCABULARY_PROMPT = `The user is asking about ${OMATUT_VOCABULARY.map(entry => entry.term).join(", ")}. Preserve these spellings.`;
 
+export function extractTranscriptText(output: string): string {
+  const clean = output.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "").trim();
+  if (!clean) return "";
+  const lines = clean.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const last = lines.at(-1) || "";
+  const logged = last.match(/Transcription completed in .*?:\s*["“](.*?)["”]\s*$/);
+  return (logged?.[1] || last).trim();
+}
+
 export function normalizeTranscript(transcript: string): string {
   let normalized = transcript.trim();
   for (const entry of OMATUT_VOCABULARY) {
