@@ -5,6 +5,7 @@ OmaTut is a screen-aware tutor for Omarchy, shaped around the interaction model 
 ## Current MVP
 
 - A Navi-style, click-through Omarchy shell overlay with a buddy, target pulse, “Here” label, teaching bubble, shortcut card, and status pill.
+- A Navi-style two-press voice loop: trigger once to listen, trigger again to capture the focused monitor and ask.
 - Normalized visual target coordinates mapped back into the selected desktop region.
 - Explicit region capture with an on-screen preview before anything is sent.
 - Live Omarchy version, channel, active window, workspace, pointer, and keybinding context.
@@ -17,7 +18,7 @@ The Chromium companion window handles setup, deliberate screen selection, and a 
 
 ## Run locally
 
-Requirements: Omarchy 4+, Node.js 24+, Chromium, `secret-tool`, and the standard Omarchy screenshot tools.
+Requirements: Omarchy 4+, Node.js 24+, Chromium, `secret-tool`, Voxtype, PipeWire's `pw-record`, and the standard Omarchy screenshot tools.
 
 ```bash
 cd /home/benpc1/Work/omatut
@@ -35,11 +36,23 @@ npm run install:desktop
 
 This installs user-owned desktop integration, a systemd user service, the launcher, icon, Omarchy theme template, and the `benryanx.omatut` shell overlay plugin. It enables the plugin but does not alter Hyprland bindings. Launch **OmaTut** from the app launcher.
 
+## Navi-style voice guidance
+
+Run `omatut-voice` once and speak your question. Run it again to stop listening. OmaTut then hides its overlay, captures only the focused monitor, transcribes locally with Voxtype, and sends the transcript plus screenshot for guidance. Run `omatut-dismiss` to cancel recording or hide the guide.
+
+The installer deliberately leaves the shortcut choice to you. To use `SUPER + CTRL + SPACE`, add this to `~/.config/hypr/bindings.lua`:
+
+```lua
+o.bind("SUPER + CTRL + SPACE", "Ask OmaTut", "omatut-voice")
+```
+
+That key was unassigned in the installed Omarchy keybinding catalogue when this feature was built. After changing the file, validate it with `hyprctl reload` and `hyprctl configerrors`.
+
 ## Privacy contract
 
 1. OmaTut captures only after an explicit action.
-2. The captured region is shown before submission.
-3. Screen pixels are sent only after **Ask OmaTut** is pressed.
+2. Companion-mode captures are shown before submission; voice-mode captures are scoped to the focused monitor and initiated by the second voice trigger.
+3. Screen pixels are sent only after **Ask OmaTut** or the second `omatut-voice` trigger.
 4. Captures are kept in runtime memory only and expire after ten minutes.
 5. The OpenAI key is stored in the desktop keyring, never in this repository or a settings file.
 

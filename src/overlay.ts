@@ -10,7 +10,7 @@ export async function overlayAvailable(run: CommandRunner = runCommand): Promise
   catch { return false; }
 }
 
-export async function showOverlayStatus(mode: "seeing" | "thinking", message: string, run: CommandRunner = runCommand): Promise<void> {
+export async function showOverlayStatus(mode: "listening" | "seeing" | "thinking", message: string, run: CommandRunner = runCommand): Promise<void> {
   await call("status", JSON.stringify({ mode, message }), run);
 }
 

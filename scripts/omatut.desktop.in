@@ -7,4 +7,12 @@ Icon=omatut
 Terminal=false
 Categories=Education;Utility;
 StartupNotify=true
+Actions=Voice;Dismiss;
 
+[Desktop Action Voice]
+Name=Ask OmaTut by Voice
+Exec=@VOICE@
+
+[Desktop Action Dismiss]
+Name=Dismiss OmaTut
+Exec=@DISMISS@

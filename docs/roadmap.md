@@ -16,9 +16,9 @@
 
 ## Slice 2 — Voice-first invocation
 
-- [ ] Global launcher action and optional user-chosen binding
-- [ ] Hold-to-point-and-speak interaction using the Meeting Dictation capture boundary
-- [ ] Automatic screenshot with the overlay hidden
+- [x] Global voice action and optional user-chosen binding
+- [x] Two-press local voice interaction using Voxtype
+- [x] Automatic focused-monitor screenshot with the overlay hidden
 - [ ] Escape/dismiss action and next-step progression
 
 ## Slice 3 — Guided practice

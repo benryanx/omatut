@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+curl --silent --fail -X POST http://127.0.0.1:47841/api/overlay/dismiss >/dev/null

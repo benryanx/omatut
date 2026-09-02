@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+systemctl --user start omatut.service
+for _attempt in {1..30}; do
+  curl --silent --fail http://127.0.0.1:47841/api/status >/dev/null && break
+  sleep 0.1
+done
+
+response="$(curl --silent --show-error --fail-with-body -X POST http://127.0.0.1:47841/api/voice/toggle)" || {
+  notify-send "OmaTut" "$(jq -r '.error // "Could not start voice guidance."' <<<"${response:-{}}" 2>/dev/null || printf '%s' 'Could not start voice guidance.')"
+  exit 1
+}
+
+state="$(jq -r '.state // empty' <<<"$response")"
+if [[ "$state" == "listening" ]]; then
+  notify-send -t 2500 "OmaTut is listening" "Trigger OmaTut again to ask."
+fi

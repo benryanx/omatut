@@ -1,8 +1,9 @@
 const $ = selector => document.querySelector(selector);
-const state = { captureId: null, keyConfigured: false };
+const state = { captureId: null, keyConfigured: false, voiceRecording: false, voiceBusy: false };
 
 const ui = {
   version: $("#version"), window: $("#window"), bindingCount: $("#binding-count"), overlayState: $("#overlay-state"),
+  voice: $("#voice-button"),
   emptyCapture: $("#empty-capture"), preview: $("#capture-preview"), image: $("#capture-image"),
   capture: $("#capture-button"), recapture: $("#recapture-button"), question: $("#question"), ask: $("#ask-button"),
   form: $("#ask-form"), answerCard: $("#answer-card"), answerText: $("#answer-text"), steps: $("#steps"),
@@ -20,6 +21,7 @@ async function request(path, options = {}) {
 async function loadStatus() {
   try {
     const status = await request("/api/status"); state.keyConfigured = status.keyConfigured;
+    state.voiceRecording = Boolean(status.voice?.recording); state.voiceBusy = Boolean(status.voice?.busy); updateVoice();
     ui.overlayState.textContent = status.overlayConnected ? "On-screen guide ready" : "Companion mode";
     ui.overlayState.closest(".local-badge").classList.toggle("offline", !status.overlayConnected);
     const context = status.context;
@@ -27,6 +29,23 @@ async function loadStatus() {
     ui.window.textContent = context.activeWindow.title ? `${context.activeWindow.title}${context.activeWindow.workspace != null ? ` · workspace ${context.activeWindow.workspace}` : ""}` : "Desktop context available";
     ui.bindingCount.textContent = `${context.bindings.length} bindings indexed`;
   } catch (error) { showToast(error.message); }
+}
+
+async function toggleVoice() {
+  if (!state.keyConfigured) { ui.settings.showModal(); return; }
+  state.voiceBusy = true; updateVoice();
+  try {
+    const result = await request("/api/voice/toggle", { method: "POST" });
+    state.voiceRecording = result.state === "listening";
+    if (result.answer) { renderAnswer(result.answer); ui.answerCard.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  } catch (error) { showToast(error.message); await loadStatus(); }
+  finally { state.voiceBusy = false; updateVoice(); }
+}
+
+function updateVoice() {
+  ui.voice.disabled = state.voiceBusy;
+  ui.voice.classList.toggle("recording", state.voiceRecording);
+  ui.voice.innerHTML = state.voiceBusy ? "<span>◌</span> Working…" : state.voiceRecording ? "<span>■</span> Stop & ask" : "<span>●</span> Ask by voice";
 }
 
 async function takeCapture() {
@@ -42,6 +61,7 @@ async function takeCapture() {
 function updateAsk() { ui.ask.disabled = !state.captureId || !ui.question.value.trim(); }
 
 ui.capture.addEventListener("click", takeCapture); ui.recapture.addEventListener("click", takeCapture);
+ui.voice.addEventListener("click", toggleVoice);
 ui.question.addEventListener("input", updateAsk);
 document.querySelectorAll("[data-question]").forEach(button => button.addEventListener("click", () => { ui.question.value = button.dataset.question; updateAsk(); ui.question.focus(); }));
 ui.settingsButton.addEventListener("click", () => ui.settings.showModal());

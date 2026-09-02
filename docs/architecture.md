@@ -2,8 +2,8 @@
 
 ## Invariants
 
-1. Screen access is explicit, visible, and scoped to a user-selected region.
-2. The captured image is previewed before submission and is never written to OmaTut's application data.
+1. Screen access is explicit and visible: companion mode uses a selected region; voice mode uses the focused monitor after the second trigger.
+2. Companion captures are previewed before submission. Voice captures are deliberately triggered, briefly written only to a temporary file, then retained only in memory.
 3. Installed commands and current user configuration outrank remembered defaults.
 4. Observation is distinct from mutation. The MVP does not change system configuration.
 5. OmaTut binds only to localhost and never exposes credential-reading endpoints.
@@ -33,3 +33,21 @@ pointer, bindings      memory-only image
 The user-owned `benryanx.omatut` plugin registers the `omatut` IPC target inside the existing `omarchy-shell` process. The service sends `status`, `guide`, and `dismiss` messages. The QML plugin owns visual spotlighting, the buddy, the teaching bubble, and keycaps; the service owns capture, system context, model calls, policy, coordinate mapping, and ephemeral state.
 
 The overlay is a full-screen layer-shell surface with an empty input region. It cannot steal focus or block the target underneath it. This split also keeps arbitrary system commands out of the presentation layer and allows the overlay to disappear without interrupting an in-flight explanation.
+
+## Voice flow
+
+```text
+omatut-voice (first trigger)
+          |
+  pw-record + visible listening status
+          |
+omatut-voice (second trigger)
+          |
+ stop audio -> hide overlay -> capture focused monitor
+          |
+ local Voxtype transcript -> Responses API vision
+          |
+       overlay guide
+```
+
+The temporary WAV and PNG are removed immediately after being read. `omatut-dismiss` cancels an active recording as well as hiding guidance. The launcher action is installed globally, while a compositor binding remains an explicit user choice.

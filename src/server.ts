@@ -1,20 +1,24 @@
 #!/usr/bin/env node
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createReadStream, existsSync } from "node:fs";
+import { unlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CaptureStore, captureRegion } from "./capture.ts";
+import { CaptureStore, captureFocusedMonitor, captureRegion } from "./capture.ts";
 import { readDesktopContext } from "./omarchy.ts";
 import { getOpenAIKey, setOpenAIKey } from "./secrets.ts";
 import { OpenAITutor } from "./tutor.ts";
 import { dismissOverlay, overlayAvailable, showOverlayGuide, showOverlayStatus } from "./overlay.ts";
+import { transcribeRecording, VoiceRecorder } from "./voice.ts";
 
 const HOST = process.env.OMATUT_HOST || "127.0.0.1";
 const PORT = Number(process.env.OMATUT_PORT || 47841);
 const publicDir = resolve(dirname(fileURLToPath(import.meta.url)), "../public");
 const themeCss = join(homedir(), ".local", "state", "omarchy", "current", "theme", "omatut.css");
 const captures = new CaptureStore();
+const voice = new VoiceRecorder();
+let voiceBusy = false;
 const themeClients = new Set<ServerResponse>();
 
 const server = createServer(async (req, res) => {
@@ -42,7 +46,7 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
   }
   if (req.method === "GET" && url.pathname === "/api/status") {
     const [context, overlayConnected] = await Promise.all([readDesktopContext(), overlayAvailable()]);
-    return json(res, { ready: true, keyConfigured: Boolean(getOpenAIKey()), captureReady: Boolean(captures.get()), overlayConnected, context });
+    return json(res, { ready: true, keyConfigured: Boolean(getOpenAIKey()), captureReady: Boolean(captures.get()), overlayConnected, voice: { recording: voice.recording, busy: voiceBusy }, context });
   }
   if (req.method === "PUT" && url.pathname === "/api/settings/openai-key") {
     const body = await jsonBody(req); await setOpenAIKey(String(body.key || "")); return json(res, { ok: true });
@@ -68,7 +72,37 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
     await showOverlayGuide(answer, capture);
     return json(res, { answer, context });
   }
-  if (req.method === "POST" && url.pathname === "/api/overlay/dismiss") { await dismissOverlay(); return json(res, { ok: true }); }
+  if (req.method === "POST" && url.pathname === "/api/voice/toggle") {
+    if (voiceBusy) throw new Error("OmaTut is still working on your last question.");
+    if (!voice.recording) {
+      if (!getOpenAIKey()) throw new Error("Add an OpenAI API key in Settings first.");
+      await voice.start();
+      await showOverlayStatus("listening", "Listening… trigger OmaTut again to ask");
+      return json(res, { state: "listening" }, 202);
+    }
+    voiceBusy = true; let recordingPath: string | null = null;
+    try {
+      recordingPath = await voice.stop();
+      await dismissOverlay();
+      const capture = captures.set(await captureFocusedMonitor());
+      await showOverlayStatus("thinking", "Transcribing your question…");
+      const question = await transcribeRecording(recordingPath); recordingPath = null;
+      await showOverlayStatus("thinking", "Looking at your screen…");
+      const context = await readDesktopContext();
+      const answer = await new OpenAITutor(getOpenAIKey()).ask(question, capture, context);
+      await showOverlayGuide(answer, capture);
+      return json(res, { state: "guide", question, answer, context });
+    } catch (error) {
+      await dismissOverlay();
+      throw error;
+    } finally {
+      voiceBusy = false;
+      if (recordingPath) await unlink(recordingPath).catch(() => undefined);
+    }
+  }
+  if (req.method === "POST" && url.pathname === "/api/overlay/dismiss") {
+    await voice.cancel(); await dismissOverlay(); return json(res, { ok: true });
+  }
   return json(res, { error: "Not found" }, 404);
 }
 

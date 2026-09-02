@@ -164,7 +164,7 @@ Item {
           border.color: Util.alpha(Color.popups.text, 0.45)
 
           SequentialAnimation on scale {
-            running: root.mode === "thinking"
+            running: root.mode === "thinking" || root.mode === "listening"
             loops: Animation.Infinite
             NumberAnimation { from: 1; to: 1.1; duration: 650; easing.type: Easing.InOutQuad }
             NumberAnimation { from: 1.1; to: 1; duration: 650; easing.type: Easing.InOutQuad }
@@ -172,7 +172,7 @@ Item {
 
           Text {
             anchors.centerIn: parent
-            text: root.mode === "thinking" ? "◌" : "✦"
+            text: root.mode === "listening" ? "●" : (root.mode === "thinking" ? "◌" : "✦")
             color: Color.background
             font.family: Style.font.family
             font.pixelSize: Style.font.display
