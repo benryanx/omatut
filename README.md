@@ -69,4 +69,8 @@ The AI tutor can use OpenAI's Responses API, Ollama's local chat API, or an Open
 6. Learning history is opt-in, structured, local, and user-deletable; it never contains screen or microphone data.
 7. When an observation is due, local learning notes are sent only to the tutor provider selected in Settings; they never include screen or microphone data.
 
+## License
+
+OmaTut is released under the [MIT License](LICENSE).
+
 Exact-name checks performed on 2 September 2026 found no `omatut` package on npm, PyPI, or AUR, and no exact `omarchy/omatut` GitHub repository. This is a practical collision check, not trademark clearance.
