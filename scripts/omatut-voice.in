@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-systemctl --user start omatut.service
+SESSION_ENV="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/omatut.env"
+SESSION_VALUES="HYPRLAND_INSTANCE_SIGNATURE=${HYPRLAND_INSTANCE_SIGNATURE:-}
+WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-}
+XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-}"
+
+# The user service does not inherit Hyprland's per-login socket by default.
+# Refresh it when the shortcut is invoked; restarting is only needed after a
+# new desktop session, never for the second press that submits a question.
+if [[ "${HYPRLAND_INSTANCE_SIGNATURE:-}" != "" ]] && ! cmp -s <(printf '%s\n' "$SESSION_VALUES") "$SESSION_ENV" 2>/dev/null; then
+  umask 077
+  printf '%s\n' "$SESSION_VALUES" > "$SESSION_ENV"
+  systemctl --user restart omatut.service
+else
+  systemctl --user start omatut.service
+fi
 for _attempt in {1..30}; do
   curl --silent --fail http://127.0.0.1:47841/api/status >/dev/null && break
   sleep 0.1

@@ -9,7 +9,9 @@ ExecStart=@NODE_BIN@ @APP_DIR@/src/server.ts
 Restart=on-failure
 RestartSec=2
 Environment=NODE_ENV=production
+# Hyprland's instance socket changes each login.  The launch scripts refresh this
+# file before starting the service so compositor commands work from systemd.
+EnvironmentFile=-%t/omatut.env
 
 [Install]
 WantedBy=default.target
-
