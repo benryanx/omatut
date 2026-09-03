@@ -79,7 +79,12 @@ function renderLessons(container, lessons, deletable) {
       meta.append(topic, time); article.append(meta);
     }
     article.append(question, answer);
-    if (!deletable && lesson.shortcut) { const shortcut = document.createElement("kbd"); shortcut.className = "lesson-shortcut"; shortcut.textContent = lesson.shortcut; article.append(shortcut); }
+    if (lesson.steps?.length) {
+      const steps = document.createElement("ol"); steps.className = "lesson-steps";
+      lesson.steps.forEach(step => { const item = document.createElement("li"); item.textContent = step; steps.append(item); });
+      article.append(steps);
+    }
+    if (lesson.shortcut) { const shortcut = document.createElement("kbd"); shortcut.className = "lesson-shortcut"; shortcut.textContent = lesson.shortcut; article.append(shortcut); }
     if (deletable) {
       const details = document.createElement("div"); details.className = "lesson-details";
       const remove = document.createElement("button"); remove.className = "delete-lesson"; remove.type = "button"; remove.dataset.lessonId = lesson.id; remove.textContent = "Remove"; details.append(remove); article.append(details);
