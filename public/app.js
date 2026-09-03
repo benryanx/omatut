@@ -5,8 +5,7 @@ const ui = {
   title: $("#view-title"), eyebrow: $("#view-eyebrow"),
   version: $("#version"), window: $("#window"), bindingCount: $("#binding-count"), voice: $("#voice-button"),
   stats: { lessons: $("#stat-lessons"), shortcuts: $("#stat-shortcuts"), topics: $("#stat-topics"), streak: $("#stat-streak") },
-  recent: $("#recent-lessons"), learning: $("#learning-lessons"), welcomeCopy: $("#welcome-copy"),
-  summary: $("#companion-summary"), refreshSummary: $("#refresh-summary"), clearLearning: $("#clear-learning"),
+  learning: $("#learning-lessons"), clearLearning: $("#clear-learning"),
   emptyCapture: $("#empty-capture"), preview: $("#capture-preview"), image: $("#capture-image"),
   capture: $("#capture-button"), recapture: $("#recapture-button"), question: $("#question"), ask: $("#ask-button"), form: $("#ask-form"),
   answerCard: $("#answer-card"), answerText: $("#answer-text"), steps: $("#steps"), shortcutCard: $("#shortcut-card"), keycaps: $("#keycaps"), confidence: $("#confidence"),
@@ -57,9 +56,8 @@ function updateContext(status) {
 
 function renderHome(home) {
   Object.entries(home.stats).forEach(([key, value]) => { if (ui.stats[key]) ui.stats[key].textContent = value; });
-  ui.welcomeCopy.textContent = home.stats.lessons ? `You’ve captured ${home.stats.lessons} useful ${home.stats.lessons === 1 ? "lesson" : "lessons"}. Keep exploring and I’ll connect the patterns.` : "Ask about anything on your screen and OmaTut will keep the useful parts organized here.";
   ui.clearLearning.disabled = home.lessons.length === 0;
-  renderLessons(ui.recent, home.lessons.slice(0, 3), false); renderLessons(ui.learning, home.lessons, true);
+  renderLessons(ui.learning, home.lessons, true);
   populateSettings(home.preferences);
 }
 
@@ -93,7 +91,7 @@ function renderLessons(container, lessons, deletable) {
 function navigate(view) {
   document.querySelectorAll("[data-view]").forEach(section => section.classList.toggle("active", section.dataset.view === view));
   document.querySelectorAll("[data-view-target]").forEach(button => button.classList.toggle("active", button.dataset.viewTarget === view));
-  const labels = { home: ["", "Home"], ask: ["SCREEN GUIDE", "Ask OmaTut"], learning: ["YOUR JOURNEY", "Learnings"] };
+  const labels = { home: ["", "Home"], ask: ["", "Ask OmaTut"], learning: ["", "Learnings"] };
   [ui.eyebrow.textContent, ui.title.textContent] = labels[view] || labels.home;
 }
 
@@ -178,9 +176,8 @@ ui.capture.addEventListener("click", takeCapture); ui.recapture.addEventListener
 ui.settingsButton.addEventListener("click", openSettings); ui.settingsClose.addEventListener("click", () => ui.settings.close());
 ui.onboardingPreview.addEventListener("click", () => previewVoice(ui.onboardingVoice, null, ui.onboardingKey, ui.onboardingPreview));
 ui.settingsPreview.addEventListener("click", () => previewVoice(ui.ttsVoice, ui.ttsSpeed, ui.apiKey, ui.settingsPreview));
-ui.refreshSummary.addEventListener("click", async () => { setBusy(ui.refreshSummary, true, "Thinking…"); try { const result = await request("/api/companion/summary", { method: "POST" }); ui.summary.textContent = result.summary; } catch (error) { showToast(error.message); } finally { setBusy(ui.refreshSummary, false, "Summarize my learning"); } });
 ui.learning.addEventListener("click", async event => { const button = event.target.closest("[data-lesson-id]"); if (!button) return; await request(`/api/learning/${encodeURIComponent(button.dataset.lessonId)}`, { method: "DELETE" }); await reloadHome(); });
-ui.clearLearning.addEventListener("click", async () => { if (!confirm("Clear all saved learning notes? This cannot be undone.")) return; await request("/api/learning", { method: "DELETE" }); ui.summary.textContent = "Your journal is clear. Ask OmaTut something new whenever you’re ready."; await reloadHome(); });
+ui.clearLearning.addEventListener("click", async () => { if (!confirm("Clear all saved learning notes? This cannot be undone.")) return; await request("/api/learning", { method: "DELETE" }); await reloadHome(); });
 
 function setBusy(button, busy, label) { if (!button) return; button.disabled = busy; button.textContent = label; }
 function relativeTime(value) { const days = Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000); if (days <= 0) return "Today"; if (days === 1) return "Yesterday"; if (days < 7) return `${days} days ago`; return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
