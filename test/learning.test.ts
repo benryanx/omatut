@@ -43,7 +43,7 @@ test("legacy learning entries permanently discard Voxtype diagnostics", () => {
     const snapshot = new LearningStore(directory).snapshot();
     assert.equal(snapshot.lessons[0].question, "How do I save a theme?");
     const migrated = JSON.parse(readFileSync(path, "utf8"));
-    assert.equal(migrated.version, 2);
+    assert.equal(migrated.version, 3);
     assert.equal(migrated.lessons[0].question, "How do I save a theme?");
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });

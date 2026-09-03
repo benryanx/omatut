@@ -37,10 +37,19 @@ export interface Lesson {
   workspace: string | number | null;
 }
 
+export interface LearningObservation {
+  id: string;
+  createdAt: string;
+  lessonCount: number;
+  observation: string;
+  recommendation: string;
+}
+
 interface LearningData {
-  version: 2;
+  version: 3;
   preferences: Preferences;
   lessons: Lesson[];
+  observations: LearningObservation[];
 }
 
 export interface LearningStats {
@@ -51,9 +60,10 @@ export interface LearningStats {
 }
 
 const defaults: LearningData = {
-  version: 2,
+  version: 3,
   preferences: { onboardingComplete: false, historyEnabled: false, ttsEnabled: false, ttsVoice: "coral", ttsSpeed: 1, guideTiming: "adaptive", aiProvider: "openai", aiModel: "gpt-5.6-luna", aiBaseUrl: "" },
   lessons: [],
+  observations: [],
 };
 
 export class LearningStore {
@@ -63,9 +73,9 @@ export class LearningStore {
     this.path = join(directory, "learning.json");
   }
 
-  snapshot(): { preferences: Preferences; lessons: Lesson[]; stats: LearningStats } {
+  snapshot(): { preferences: Preferences; lessons: Lesson[]; observations: LearningObservation[]; stats: LearningStats } {
     const data = this.read();
-    return { preferences: { ...data.preferences }, lessons: data.lessons.map(copyLesson), stats: calculateStats(data.lessons) };
+    return { preferences: { ...data.preferences }, lessons: data.lessons.map(copyLesson), observations: data.observations.map(copyObservation), stats: calculateStats(data.lessons) };
   }
 
   updatePreferences(input: Partial<Preferences>): Preferences {
@@ -104,18 +114,25 @@ export class LearningStore {
     this.write(data); return true;
   }
 
-  clearLessons(): void { const data = this.read(); data.lessons = []; this.write(data); }
+  clearLessons(): void { const data = this.read(); data.lessons = []; data.observations = []; this.write(data); }
+
+  addObservation(lessonCount: number, observation: string, recommendation: string): LearningObservation {
+    const data = this.read();
+    const item: LearningObservation = { id: randomUUID(), createdAt: new Date().toISOString(), lessonCount, observation: observation.trim().slice(0, 1_200), recommendation: recommendation.trim().slice(0, 500) };
+    data.observations.unshift(item); data.observations = data.observations.slice(0, 50); this.write(data); return copyObservation(item);
+  }
 
   private read(): LearningData {
     if (!existsSync(this.path)) return structuredClone(defaults);
     try {
       const value = JSON.parse(readFileSync(this.path, "utf8")) as Partial<LearningData>;
       const data: LearningData = {
-        version: 2,
+        version: 3,
         preferences: normalizePreferences(value.preferences),
         lessons: Array.isArray(value.lessons) ? value.lessons.map(sanitizeLesson).filter((lesson): lesson is Lesson => lesson !== null).slice(0, 500) : [],
+        observations: Array.isArray(value.observations) ? value.observations.map(sanitizeObservation).filter((item): item is LearningObservation => item !== null).slice(0, 50) : [],
       };
-      if (value.version !== 2) this.write(data);
+      if (value.version !== 3) this.write(data);
       return data;
     } catch { return structuredClone(defaults); }
   }
@@ -143,6 +160,7 @@ function localDay(date: Date): string {
 }
 
 function copyLesson(lesson: Lesson): Lesson { return { ...lesson, steps: [...lesson.steps] }; }
+function copyObservation(item: LearningObservation): LearningObservation { return { ...item }; }
 
 function normalizePreferences(value: unknown): Preferences {
   const input = value && typeof value === "object" ? value as Partial<Preferences> : {};
@@ -171,6 +189,13 @@ function sanitizeLesson(value: unknown): Lesson | null {
     app: typeof lesson.app === "string" ? lesson.app : null,
     workspace: typeof lesson.workspace === "string" || typeof lesson.workspace === "number" ? lesson.workspace : null,
   };
+}
+
+function sanitizeObservation(value: unknown): LearningObservation | null {
+  if (!value || typeof value !== "object") return null;
+  const item = value as Partial<LearningObservation>;
+  if (typeof item.id !== "string" || typeof item.createdAt !== "string" || typeof item.lessonCount !== "number" || typeof item.observation !== "string" || typeof item.recommendation !== "string") return null;
+  return { id: item.id, createdAt: item.createdAt, lessonCount: item.lessonCount, observation: item.observation.slice(0, 1_200), recommendation: item.recommendation.slice(0, 500) };
 }
 
 function cleanStoredQuestion(question: string): string {

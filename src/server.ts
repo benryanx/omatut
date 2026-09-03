@@ -12,7 +12,7 @@ import { createTutor } from "./tutor.ts";
 import { dismissOverlay, overlayAvailable, showOverlayGuide, showOverlayStatus } from "./overlay.ts";
 import { transcribeRecording, VoiceRecorder } from "./voice.ts";
 import { LearningStore, type AiProvider, type Preferences, type TtsVoice } from "./learning.ts";
-import { OpenAICompanion } from "./companion.ts";
+import { observeLearnings, OpenAICompanion } from "./companion.ts";
 import { OpenAISpeech, SpeechPlayer } from "./speech.ts";
 import { playActivationPing } from "./sound.ts";
 import { LiveUpdates } from "./live.ts";
@@ -27,6 +27,7 @@ const learning = new LearningStore();
 const speechPlayer = new SpeechPlayer();
 let speechRequest: AbortController | null = null;
 let voiceBusy = false;
+let observationBusy = false;
 const themeClients = new Set<ServerResponse>();
 const learningUpdates = new LiveUpdates();
 
@@ -62,7 +63,10 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
     const preferences = learning.snapshot().preferences;
     return json(res, { ready: true, keyConfigured: tutorConfigured(preferences), openAIKeyConfigured: Boolean(getOpenAIKey()), captureReady: Boolean(captures.get()), overlayConnected, voice: { recording: voice.recording, busy: voiceBusy }, preferences, context });
   }
-  if (req.method === "GET" && url.pathname === "/api/home") return json(res, learning.snapshot());
+  if (req.method === "GET" && url.pathname === "/api/home") {
+    void maybeCreateObservation().catch(error => console.error("Learning observation failed:", error));
+    return json(res, learning.snapshot());
+  }
   if (req.method === "PUT" && url.pathname === "/api/preferences") {
     const preferences = learning.updatePreferences(await jsonBody(req) as Partial<Preferences>);
     if (!preferences.ttsEnabled) await stopSpeech();
@@ -165,9 +169,24 @@ async function teach(question: string, capture: Capture): Promise<Record<string,
   await showOverlayGuide(answer, capture, preferences.guideTiming);
   const lesson = learning.addLesson(question, answer, context);
   if (lesson) learningUpdates.publish();
+  if (lesson) void maybeCreateObservation().catch(error => console.error("Learning observation failed:", error));
   const openAIKey = getOpenAIKey();
   if (preferences.ttsEnabled && openAIKey) void speakText(spokenAnswer(answer), preferences, openAIKey).catch(error => console.error("Speech playback failed:", error));
   return { answer, context, lesson };
+}
+
+async function maybeCreateObservation(): Promise<void> {
+  if (observationBusy) return;
+  const snapshot = learning.snapshot(); const count = snapshot.lessons.length;
+  const lastCount = snapshot.observations[0]?.lessonCount || 0;
+  if (count < 5 || count - lastCount < 5) return;
+  observationBusy = true;
+  try {
+    const preferences = snapshot.preferences;
+    const provider = preferences.aiProvider;
+    const observation = await observeLearnings({ provider, model: preferences.aiModel, baseUrl: preferences.aiBaseUrl, apiKey: provider === "ollama" ? null : getProviderKey(provider) }, snapshot.lessons);
+    learning.addObservation(count, observation.observation, observation.recommendation); learningUpdates.publish();
+  } finally { observationBusy = false; }
 }
 
 function tutorConfigured(preferences: Preferences): boolean {

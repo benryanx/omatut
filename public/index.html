@@ -14,7 +14,6 @@
       <div class="brand"><span class="brand-mark">✦</span><b>OmaTut</b></div>
       <nav class="side-nav" aria-label="Main navigation">
         <button class="active" data-view-target="home"><span>⌂</span> Home</button>
-        <button data-view-target="ask"><span>⌖</span> Ask OmaTut</button>
         <button data-view-target="learning"><span>◫</span> Learnings</button>
       </nav>
     </aside>
@@ -32,15 +31,7 @@
         <div class="stats-grid" aria-label="Learning statistics">
           <article><span>LESSONS</span><strong id="stat-lessons">0</strong></article><article><span>SHORTCUTS</span><strong id="stat-shortcuts">0</strong></article><article><span>TOPICS</span><strong id="stat-topics">0</strong></article><article><span>STREAK</span><strong id="stat-streak">0</strong></article>
         </div>
-      </section>
-
-      <section class="view" data-view="ask">
-        <article class="ask-intro"><div><p class="eyebrow">SCREEN-AWARE HELP</p><h2>Ask a question</h2></div><div class="context-line"><span id="version">Omarchy</span><span id="window">Reading desktop context…</span><span id="binding-count"></span></div></article>
-        <section class="guide-card">
-          <div class="capture-panel"><div class="empty-capture" id="empty-capture"><div class="reticle"></div><div><h3>Choose something on screen</h3><p>You control exactly what OmaTut can see.</p></div><button class="primary" id="capture-button">Select an area</button></div><div class="capture-preview hidden" id="capture-preview"><img id="capture-image" alt="Selected screen region"><div class="capture-actions"><span><i></i> Ready to ask</span><button class="quiet" id="recapture-button">Choose again</button></div></div></div>
-          <form class="ask-panel" id="ask-form"><label for="question">What do you want to know?</label><div class="ask-row"><textarea id="question" maxlength="2000" rows="2" placeholder="Teach me something useful about this…" required></textarea><button class="primary ask" id="ask-button" disabled aria-label="Ask OmaTut">↗</button></div><div class="suggestions"><button type="button" data-question="What is this and what is the safest next step?">What is this?</button><button type="button" data-question="What shortcut should I use for this on my current Omarchy setup?">Show the shortcut</button><button type="button" data-question="Teach me how to do this myself, one step at a time.">Teach me</button><span>Nothing is sent until you ask.</span></div></form>
-        </section>
-        <section class="answer-card hidden" id="answer-card" aria-live="polite"><div class="card-heading"><span class="mini-mark">✦</span><div><p class="eyebrow">OMATUT</p><h2>Here’s what to do</h2></div></div><p class="answer-text" id="answer-text"></p><div class="shortcut-card hidden" id="shortcut-card"><span>shortcut</span><div id="keycaps"></div></div><ol id="steps"></ol><p class="confidence" id="confidence"></p></section>
+        <section class="reflection" aria-live="polite"><p class="eyebrow">LEARNING OBSERVATION</p><p id="observation-text">Your first observation arrives after five learnings.</p><div class="recommendation"><span>NEXT</span><p id="recommendation-text">Explore one part of Omarchy and ask OmaTut when you want a hand.</p></div></section>
       </section>
 
       <section class="view" data-view="learning"><div class="learning-head"><span>QUESTION LOG</span><button class="quiet danger" id="clear-learning">Clear</button></div><div id="learning-lessons" class="lesson-list full"></div></section>

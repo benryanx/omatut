@@ -18,7 +18,7 @@ OmaTut is a screen-aware tutor for Omarchy, shaped around the interaction model 
 - Screenshots are held only in memory, replaced by the next capture, and never added to an OmaTut history.
 - Localhost-only service with origin validation, a restrictive content security policy, and API keys stored in Secret Service.
 
-The Chromium companion window handles setup, deliberate screen selection, and a fallback answer view. The primary teaching response appears in the transparent Omarchy overlay and never steals focus or blocks clicks.
+The Chromium companion window handles setup, learning progress, and the local journal. The primary teaching response appears in the transparent Omarchy overlay and never steals focus or blocks clicks.
 
 ## Run locally
 
@@ -55,7 +55,7 @@ Check `omarchy menu keybindings --print` before adding these because future Omar
 
 ## Learning companion
 
-The companion opens with a one-time setup for learning history and tutor voice. Home shows recent lessons and meaningful counts; Learning contains the full journal; Ask retains deliberate region capture. An open companion refreshes its journal and statistics immediately after a voice or screen-guided lesson completes. When enabled, the journal stores only the question, answer, steps, shortcut, topic, application name, workspace, and time in `~/.local/state/omatut/learning.json` with user-only permissions.
+The companion opens with a one-time setup for learning history and tutor voice. Home shows progress, an AI observation, and one recommended next Omarchy topic; Learnings contains the full journal. An observation is created after the first five lessons and then every five additional lessons, using the selected tutor provider and only the locally stored lesson data. An open companion refreshes its journal and statistics immediately after a voice-guided lesson completes. When enabled, the journal stores only the question, answer, steps, shortcut, topic, application name, workspace, time, and generated observations in `~/.local/state/omatut/learning.json` with user-only permissions.
 
 The AI tutor can use OpenAI's Responses API, Ollama's local chat API, or an OpenAI-compatible Chat Completions endpoint. Ollama users should select a vision-capable model because OmaTut sends the selected screen region with every question. Provider keys are stored separately in Secret Service. Voice playback uses OpenAI's `gpt-4o-mini-tts` model and is off until enabled; it can retain a separate OpenAI key when the tutor uses another provider. The selected AI-generated voice speaks the explanation and ordered steps, can be stopped by dismissing OmaTut, and is never saved to the journal. Guide timing can be adaptive, fixed, or persistent; hovering pauses a running timer. Learning summaries are generated only when **Summarize my learning** is pressed.
 
@@ -67,6 +67,6 @@ The AI tutor can use OpenAI's Responses API, Ollama's local chat API, or an Open
 4. Captures are kept in runtime memory only and expire after ten minutes.
 5. The OpenAI key is stored in the desktop keyring, never in this repository or a settings file.
 6. Learning history is opt-in, structured, local, and user-deletable; it never contains screen or microphone data.
-7. Learning notes are sent for an AI summary only after the user presses the summary button.
+7. When an observation is due, local learning notes are sent only to the tutor provider selected in Settings; they never include screen or microphone data.
 
 Exact-name checks performed on 2 September 2026 found no `omatut` package on npm, PyPI, or AUR, and no exact `omarchy/omatut` GitHub repository. This is a practical collision check, not trademark clearance.
