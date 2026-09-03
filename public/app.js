@@ -100,6 +100,7 @@ async function toggleVoice() {
   state.voiceBusy = true; updateVoice();
   try {
     const result = await request("/api/voice/toggle", { method: "POST" }); state.voiceRecording = result.state === "listening";
+    if (state.voiceRecording) navigate("ask");
     if (result.question) { ui.question.value = result.question; updateAsk(); }
     if (result.answer) { renderAnswer(result.answer); navigate("ask"); await reloadHome(); }
   } catch (error) { showToast(error.message); }
