@@ -13,7 +13,7 @@ OmaTut is a screen-aware tutor for Omarchy, shaped around the interaction model 
 - Normalized visual target coordinates mapped back into the selected desktop region.
 - Explicit region capture with an on-screen preview before anything is sent.
 - Live Omarchy version, channel, active window, workspace, pointer, and keybinding context.
-- Vision guidance through the OpenAI Responses API.
+- Vision guidance through OpenAI, local Ollama vision models, or OpenAI-compatible APIs.
 - Structured answers with a concise explanation, ordered steps, and a prominent shortcut card.
 - Screenshots are held only in memory, replaced by the next capture, and never added to an OmaTut history.
 - Localhost-only service with origin validation, a restrictive content security policy, and API keys stored in Secret Service.
@@ -30,7 +30,7 @@ npm test
 npm start
 ```
 
-Open `http://127.0.0.1:47841`, add an OpenAI API key under Settings, choose **See my screen**, select a region, and ask a question.
+Open `http://127.0.0.1:47841`, choose an AI tutor under Settings, select a region, and ask a question. OpenAI needs its API key; Ollama uses its local endpoint (default `http://127.0.0.1:11434`) and a vision-capable local model; compatible providers need a base URL, model, and API key.
 
 ## Install on Omarchy
 
@@ -57,7 +57,7 @@ Check `omarchy menu keybindings --print` before adding these because future Omar
 
 The companion opens with a one-time setup for learning history and tutor voice. Home shows recent lessons and meaningful counts; Learning contains the full journal; Ask retains deliberate region capture. An open companion refreshes its journal and statistics immediately after a voice or screen-guided lesson completes. When enabled, the journal stores only the question, answer, steps, shortcut, topic, application name, workspace, and time in `~/.local/state/omatut/learning.json` with user-only permissions.
 
-Voice playback uses OpenAI's `gpt-4o-mini-tts` model and is off until enabled. The selected AI-generated voice speaks the explanation and ordered steps, can be stopped by dismissing OmaTut, and is never saved to the journal. Guide timing can be adaptive, fixed, or persistent; hovering pauses a running timer. Learning summaries are generated only when **Summarize my learning** is pressed.
+The AI tutor can use OpenAI's Responses API, Ollama's local chat API, or an OpenAI-compatible Chat Completions endpoint. Ollama users should select a vision-capable model because OmaTut sends the selected screen region with every question. Provider keys are stored separately in Secret Service. Voice playback uses OpenAI's `gpt-4o-mini-tts` model and is off until enabled; it can retain a separate OpenAI key when the tutor uses another provider. The selected AI-generated voice speaks the explanation and ordered steps, can be stopped by dismissing OmaTut, and is never saved to the journal. Guide timing can be adaptive, fixed, or persistent; hovering pauses a running timer. Learning summaries are generated only when **Summarize my learning** is pressed.
 
 ## Privacy contract
 

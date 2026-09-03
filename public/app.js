@@ -9,8 +9,8 @@ const ui = {
   emptyCapture: $("#empty-capture"), preview: $("#capture-preview"), image: $("#capture-image"),
   capture: $("#capture-button"), recapture: $("#recapture-button"), question: $("#question"), ask: $("#ask-button"), form: $("#ask-form"),
   answerCard: $("#answer-card"), answerText: $("#answer-text"), steps: $("#steps"), shortcutCard: $("#shortcut-card"), keycaps: $("#keycaps"), confidence: $("#confidence"),
-  onboarding: $("#onboarding-dialog"), onboardingForm: $("#onboarding-form"), onboardingHistory: $("#onboarding-history"), onboardingTts: $("#onboarding-tts"), onboardingVoice: $("#onboarding-voice"), onboardingKey: $("#onboarding-api-key"), onboardingKeyRow: $("#onboarding-key-row"), onboardingPreview: $("#onboarding-preview"),
-  settings: $("#settings-dialog"), settingsButton: $("#settings-button"), settingsClose: $("#settings-close"), settingsForm: $("#settings-form"), apiKey: $("#api-key"), historyEnabled: $("#history-enabled"), guideTiming: $("#guide-timing"), ttsEnabled: $("#tts-enabled"), ttsVoice: $("#tts-voice"), ttsSpeed: $("#tts-speed"), settingsPreview: $("#settings-preview"),
+  onboarding: $("#onboarding-dialog"), onboardingForm: $("#onboarding-form"), onboardingHistory: $("#onboarding-history"), onboardingTts: $("#onboarding-tts"), onboardingVoice: $("#onboarding-voice"), onboardingProvider: $("#onboarding-provider"), onboardingModel: $("#onboarding-model"), onboardingEndpoint: $("#onboarding-endpoint"), onboardingEndpointRow: $("#onboarding-endpoint-row"), onboardingKey: $("#onboarding-api-key"), onboardingKeyRow: $("#onboarding-key-row"), onboardingKeyLabel: $("#onboarding-key-label"), onboardingKeyHelp: $("#onboarding-key-help"), onboardingPreview: $("#onboarding-preview"),
+  settings: $("#settings-dialog"), settingsButton: $("#settings-button"), settingsClose: $("#settings-close"), settingsForm: $("#settings-form"), aiProvider: $("#ai-provider"), aiModel: $("#ai-model"), aiEndpoint: $("#ai-endpoint"), aiEndpointRow: $("#ai-endpoint-row"), aiKeyRow: $("#ai-key-row"), aiKeyLabel: $("#ai-key-label"), aiKeyHelp: $("#ai-key-help"), apiKey: $("#api-key"), ttsKeyRow: $("#tts-key-row"), ttsKey: $("#tts-api-key"), historyEnabled: $("#history-enabled"), guideTiming: $("#guide-timing"), ttsEnabled: $("#tts-enabled"), ttsVoice: $("#tts-voice"), ttsSpeed: $("#tts-speed"), settingsPreview: $("#settings-preview"),
   toast: $("#toast"),
 };
 
@@ -26,9 +26,7 @@ async function loadApp() {
     const [status, home] = await Promise.all([request("/api/status"), request("/api/home")]);
     state.keyConfigured = status.keyConfigured; state.voiceRecording = Boolean(status.voice?.recording); state.voiceBusy = Boolean(status.voice?.busy);
     state.preferences = home.preferences; state.lessons = home.lessons; updateVoice(); updateContext(status); renderHome(home);
-    if (!home.preferences.onboardingComplete) {
-      ui.onboardingKeyRow.classList.toggle("hidden", state.keyConfigured); ui.onboarding.showModal();
-    }
+    if (!home.preferences.onboardingComplete) { populateOnboarding(home.preferences); ui.onboarding.showModal(); }
   } catch (error) { showToast(error.message); }
 }
 
@@ -139,30 +137,42 @@ function renderAnswer(answer) {
 }
 
 function openSettings() { if (state.preferences) populateSettings(state.preferences); ui.settings.showModal(); }
-function populateSettings(preferences) { ui.historyEnabled.checked = preferences.historyEnabled; ui.guideTiming.value = preferences.guideTiming || "adaptive"; ui.ttsEnabled.checked = preferences.ttsEnabled; ui.ttsVoice.value = preferences.ttsVoice; ui.ttsSpeed.value = String(preferences.ttsSpeed); }
+function populateSettings(preferences) {
+  ui.historyEnabled.checked = preferences.historyEnabled; ui.guideTiming.value = preferences.guideTiming || "adaptive"; ui.ttsEnabled.checked = preferences.ttsEnabled; ui.ttsVoice.value = preferences.ttsVoice; ui.ttsSpeed.value = String(preferences.ttsSpeed);
+  ui.aiProvider.value = preferences.aiProvider || "openai"; ui.aiModel.value = preferences.aiModel || providerDefaults(ui.aiProvider.value).model; ui.aiEndpoint.value = preferences.aiBaseUrl || providerDefaults(ui.aiProvider.value).endpoint; updateProviderFields("settings");
+}
+function populateOnboarding(preferences) {
+  ui.onboardingProvider.value = preferences.aiProvider || "openai"; ui.onboardingModel.value = preferences.aiModel || providerDefaults(ui.onboardingProvider.value).model; ui.onboardingEndpoint.value = preferences.aiBaseUrl || providerDefaults(ui.onboardingProvider.value).endpoint; updateProviderFields("onboarding");
+}
+function providerDefaults(provider) { return provider === "ollama" ? { model: "qwen3-vl:8b", endpoint: "http://127.0.0.1:11434" } : provider === "compatible" ? { model: "", endpoint: "" } : { model: "gpt-5.6-luna", endpoint: "" }; }
+function updateProviderFields(scope) {
+  const onboarding = scope === "onboarding"; const provider = (onboarding ? ui.onboardingProvider : ui.aiProvider).value; const endpointRow = onboarding ? ui.onboardingEndpointRow : ui.aiEndpointRow; const keyRow = onboarding ? ui.onboardingKeyRow : ui.aiKeyRow; const keyLabel = onboarding ? ui.onboardingKeyLabel : ui.aiKeyLabel; const keyHelp = onboarding ? ui.onboardingKeyHelp : ui.aiKeyHelp;
+  endpointRow.classList.toggle("hidden", provider === "openai"); keyRow.classList.toggle("hidden", provider === "ollama"); if (!onboarding) ui.ttsKeyRow.classList.toggle("hidden", provider === "openai");
+  keyLabel.textContent = provider === "compatible" ? "API key" : "OpenAI API key"; keyHelp.textContent = provider === "compatible" ? "Stored securely in Secret Service." : "Stored securely in Secret Service.";
+}
 
-async function saveKey(input) {
+async function saveKey(input, provider) {
   if (!input.value.trim()) return;
-  await request("/api/settings/openai-key", { method: "PUT", body: JSON.stringify({ key: input.value }) }); state.keyConfigured = true; input.value = "";
+  await request("/api/settings/provider-key", { method: "PUT", body: JSON.stringify({ provider, key: input.value }) }); state.keyConfigured = true; input.value = "";
 }
 
 async function previewVoice(voice, speed, keyInput, button) {
   setBusy(button, true, "Playing…");
-  try { await saveKey(keyInput); if (!state.keyConfigured) throw new Error("Add an OpenAI API key first."); await request("/api/speech/preview", { method: "POST", body: JSON.stringify({ voice: voice.value, speed: Number(speed?.value || 1) }) }); }
+  try { await saveKey(keyInput, "openai"); await request("/api/speech/preview", { method: "POST", body: JSON.stringify({ voice: voice.value, speed: Number(speed?.value || 1) }) }); }
   catch (error) { showToast(error.message); }
   finally { setBusy(button, false, "Preview"); }
 }
 
 ui.onboardingForm.addEventListener("submit", async event => {
   event.preventDefault(); const button = event.submitter; setBusy(button, true, "Setting things up…");
-  try { await saveKey(ui.onboardingKey); if (!state.keyConfigured) throw new Error("Add an OpenAI API key to continue."); await request("/api/onboarding", { method: "POST", body: JSON.stringify({ historyEnabled: ui.onboardingHistory.checked, ttsEnabled: ui.onboardingTts.checked, ttsVoice: ui.onboardingVoice.value, ttsSpeed: 1 }) }); ui.onboarding.close(); await reloadHome(); showToast("OmaTut is ready. Press Super + Shift + T anytime."); }
+  try { const provider = ui.onboardingProvider.value; await saveKey(ui.onboardingKey, provider); await request("/api/onboarding", { method: "POST", body: JSON.stringify({ historyEnabled: ui.onboardingHistory.checked, ttsEnabled: ui.onboardingTts.checked, ttsVoice: ui.onboardingVoice.value, ttsSpeed: 1, aiProvider: provider, aiModel: ui.onboardingModel.value, aiBaseUrl: ui.onboardingEndpoint.value }) }); if (provider !== "ollama" && !state.keyConfigured) throw new Error("Add an API key to continue."); ui.onboarding.close(); await reloadHome(); showToast("OmaTut is ready. Press Super + Shift + T anytime."); }
   catch (error) { showToast(error.message); }
   finally { setBusy(button, false, "Start learning"); }
 });
 
 ui.settingsForm.addEventListener("submit", async event => {
   event.preventDefault(); const button = event.submitter; setBusy(button, true, "Saving…");
-  try { await saveKey(ui.apiKey); await request("/api/preferences", { method: "PUT", body: JSON.stringify({ historyEnabled: ui.historyEnabled.checked, guideTiming: ui.guideTiming.value, ttsEnabled: ui.ttsEnabled.checked, ttsVoice: ui.ttsVoice.value, ttsSpeed: Number(ui.ttsSpeed.value) }) }); ui.settings.close(); await reloadHome(); showToast("Settings saved."); }
+  try { const provider = ui.aiProvider.value; await saveKey(ui.apiKey, provider); if (provider !== "openai") await saveKey(ui.ttsKey, "openai"); await request("/api/preferences", { method: "PUT", body: JSON.stringify({ historyEnabled: ui.historyEnabled.checked, guideTiming: ui.guideTiming.value, ttsEnabled: ui.ttsEnabled.checked, ttsVoice: ui.ttsVoice.value, ttsSpeed: Number(ui.ttsSpeed.value), aiProvider: provider, aiModel: ui.aiModel.value, aiBaseUrl: ui.aiEndpoint.value }) }); ui.settings.close(); await reloadHome(); showToast("Settings saved."); }
   catch (error) { showToast(error.message); }
   finally { setBusy(button, false, "Save settings"); }
 });
@@ -181,7 +191,8 @@ document.querySelectorAll("[data-question]").forEach(button => button.addEventLi
 ui.capture.addEventListener("click", takeCapture); ui.recapture.addEventListener("click", takeCapture); ui.voice.addEventListener("click", toggleVoice); ui.question.addEventListener("input", updateAsk);
 ui.settingsButton.addEventListener("click", openSettings); ui.settingsClose.addEventListener("click", () => ui.settings.close());
 ui.onboardingPreview.addEventListener("click", () => previewVoice(ui.onboardingVoice, null, ui.onboardingKey, ui.onboardingPreview));
-ui.settingsPreview.addEventListener("click", () => previewVoice(ui.ttsVoice, ui.ttsSpeed, ui.apiKey, ui.settingsPreview));
+ui.settingsPreview.addEventListener("click", () => previewVoice(ui.ttsVoice, ui.ttsSpeed, ui.aiProvider.value === "openai" ? ui.apiKey : ui.ttsKey, ui.settingsPreview));
+ui.onboardingProvider.addEventListener("change", () => updateProviderFields("onboarding")); ui.aiProvider.addEventListener("change", () => updateProviderFields("settings"));
 ui.learning.addEventListener("click", async event => { const button = event.target.closest("[data-lesson-id]"); if (!button) return; await request(`/api/learning/${encodeURIComponent(button.dataset.lessonId)}`, { method: "DELETE" }); await reloadHome(); });
 ui.clearLearning.addEventListener("click", async () => { if (!confirm("Clear all saved learning notes? This cannot be undone.")) return; await request("/api/learning", { method: "DELETE" }); await reloadHome(); });
 

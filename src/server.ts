@@ -7,11 +7,11 @@ import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CaptureStore, captureFocusedMonitor, captureRegion, type Capture } from "./capture.ts";
 import { readDesktopContext } from "./omarchy.ts";
-import { getOpenAIKey, setOpenAIKey } from "./secrets.ts";
-import { OpenAITutor } from "./tutor.ts";
+import { getOpenAIKey, getProviderKey, setOpenAIKey, setProviderKey } from "./secrets.ts";
+import { createTutor } from "./tutor.ts";
 import { dismissOverlay, overlayAvailable, showOverlayGuide, showOverlayStatus } from "./overlay.ts";
 import { transcribeRecording, VoiceRecorder } from "./voice.ts";
-import { LearningStore, type Preferences, type TtsVoice } from "./learning.ts";
+import { LearningStore, type AiProvider, type Preferences, type TtsVoice } from "./learning.ts";
 import { OpenAICompanion } from "./companion.ts";
 import { OpenAISpeech, SpeechPlayer } from "./speech.ts";
 import { playActivationPing } from "./sound.ts";
@@ -59,7 +59,8 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
   }
   if (req.method === "GET" && url.pathname === "/api/status") {
     const [context, overlayConnected] = await Promise.all([readDesktopContext(), overlayAvailable()]);
-    return json(res, { ready: true, keyConfigured: Boolean(getOpenAIKey()), captureReady: Boolean(captures.get()), overlayConnected, voice: { recording: voice.recording, busy: voiceBusy }, preferences: learning.snapshot().preferences, context });
+    const preferences = learning.snapshot().preferences;
+    return json(res, { ready: true, keyConfigured: tutorConfigured(preferences), openAIKeyConfigured: Boolean(getOpenAIKey()), captureReady: Boolean(captures.get()), overlayConnected, voice: { recording: voice.recording, busy: voiceBusy }, preferences, context });
   }
   if (req.method === "GET" && url.pathname === "/api/home") return json(res, learning.snapshot());
   if (req.method === "PUT" && url.pathname === "/api/preferences") {
@@ -70,6 +71,8 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
   }
   if (req.method === "POST" && url.pathname === "/api/onboarding") {
     const body = await jsonBody(req);
+    if (body.aiProvider !== "ollama" && body.aiProvider !== "openai" && body.aiProvider !== "compatible") throw new Error("Choose an AI tutor provider.");
+    if (body.aiProvider !== "ollama" && !getProviderKey(body.aiProvider)) throw new Error("Add an API key to continue.");
     const preferences = learning.updatePreferences({ ...body, onboardingComplete: true } as Partial<Preferences>);
     learningUpdates.publish();
     return json(res, { preferences });
@@ -96,6 +99,11 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
   if (req.method === "PUT" && url.pathname === "/api/settings/openai-key") {
     const body = await jsonBody(req); await setOpenAIKey(String(body.key || "")); return json(res, { ok: true });
   }
+  if (req.method === "PUT" && url.pathname === "/api/settings/provider-key") {
+    const body = await jsonBody(req); const provider = body.provider;
+    if (provider !== "openai" && provider !== "compatible") throw new Error("That provider does not use an API key.");
+    await setProviderKey(provider, String(body.key || "")); return json(res, { ok: true });
+  }
   if (req.method === "POST" && url.pathname === "/api/capture") {
     await dismissOverlay();
     const capture = captures.set(await captureRegion());
@@ -110,15 +118,14 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
   if (req.method === "POST" && url.pathname === "/api/ask") {
     const body = await jsonBody(req); const capture = captures.get(String(body.captureId || ""));
     if (!capture) throw new Error("Select a screen region before asking.");
-    const key = getOpenAIKey(); if (!key) throw new Error("Add an OpenAI API key in Settings first.");
     const question = String(body.question || "");
-    const result = await teach(question, capture, key);
+    const result = await teach(question, capture);
     return json(res, result);
   }
   if (req.method === "POST" && url.pathname === "/api/voice/toggle") {
     if (voiceBusy) throw new Error("OmaTut is still working on your last question.");
     if (!voice.recording) {
-      if (!getOpenAIKey()) throw new Error("Add an OpenAI API key in Settings first.");
+      if (!tutorConfigured(learning.snapshot().preferences)) throw new Error("Finish setting up your AI tutor in Settings first.");
       await stopSpeech();
       await voice.start();
       await showOverlayStatus("listening", "Listening… trigger OmaTut again to ask");
@@ -132,8 +139,7 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
       const capture = captures.set(await captureFocusedMonitor());
       await showOverlayStatus("thinking", "Transcribing your question…");
       const question = await transcribeRecording(recordingPath); recordingPath = null;
-      const key = getOpenAIKey(); if (!key) throw new Error("Add an OpenAI API key in Settings first.");
-      const result = await teach(question, capture, key);
+      const result = await teach(question, capture);
       return json(res, { state: "guide", question, ...result });
     } catch (error) {
       await dismissOverlay();
@@ -149,16 +155,23 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
   return json(res, { error: "Not found" }, 404);
 }
 
-async function teach(question: string, capture: Capture, key: string): Promise<Record<string, unknown>> {
+async function teach(question: string, capture: Capture): Promise<Record<string, unknown>> {
   await stopSpeech(); await showOverlayStatus("thinking", "Analyzing the scene…");
   const context = await readDesktopContext();
-  const answer = await new OpenAITutor(key).ask(question, capture, context);
   const preferences = learning.snapshot().preferences;
+  if (!tutorConfigured(preferences)) throw new Error("Finish setting up your AI tutor in Settings first.");
+  const provider = preferences.aiProvider;
+  const answer = await createTutor({ provider, model: preferences.aiModel, baseUrl: preferences.aiBaseUrl, apiKey: provider === "ollama" ? null : getProviderKey(provider) }).ask(question, capture, context);
   await showOverlayGuide(answer, capture, preferences.guideTiming);
   const lesson = learning.addLesson(question, answer, context);
   if (lesson) learningUpdates.publish();
-  if (preferences.ttsEnabled) void speakText(spokenAnswer(answer), preferences, key).catch(error => console.error("Speech playback failed:", error));
+  const openAIKey = getOpenAIKey();
+  if (preferences.ttsEnabled && openAIKey) void speakText(spokenAnswer(answer), preferences, openAIKey).catch(error => console.error("Speech playback failed:", error));
   return { answer, context, lesson };
+}
+
+function tutorConfigured(preferences: Preferences): boolean {
+  return preferences.aiProvider === "ollama" || Boolean(getProviderKey(preferences.aiProvider as Exclude<AiProvider, "ollama">));
 }
 
 function spokenAnswer(answer: { answer: string; steps: string[]; shortcut: string | null }): string {

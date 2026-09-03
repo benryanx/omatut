@@ -10,6 +10,8 @@ export const TTS_VOICES = ["coral", "marin", "cedar", "sage", "alloy", "ash", "b
 export type TtsVoice = typeof TTS_VOICES[number];
 export const GUIDE_TIMINGS = ["adaptive", "brief", "relaxed", "persistent"] as const;
 export type GuideTiming = typeof GUIDE_TIMINGS[number];
+export const AI_PROVIDERS = ["openai", "ollama", "compatible"] as const;
+export type AiProvider = typeof AI_PROVIDERS[number];
 
 export interface Preferences {
   onboardingComplete: boolean;
@@ -18,6 +20,9 @@ export interface Preferences {
   ttsVoice: TtsVoice;
   ttsSpeed: number;
   guideTiming: GuideTiming;
+  aiProvider: AiProvider;
+  aiModel: string;
+  aiBaseUrl: string;
 }
 
 export interface Lesson {
@@ -47,7 +52,7 @@ export interface LearningStats {
 
 const defaults: LearningData = {
   version: 2,
-  preferences: { onboardingComplete: false, historyEnabled: false, ttsEnabled: false, ttsVoice: "coral", ttsSpeed: 1, guideTiming: "adaptive" },
+  preferences: { onboardingComplete: false, historyEnabled: false, ttsEnabled: false, ttsVoice: "coral", ttsSpeed: 1, guideTiming: "adaptive", aiProvider: "openai", aiModel: "gpt-5.6-luna", aiBaseUrl: "" },
   lessons: [],
 };
 
@@ -73,6 +78,9 @@ export class LearningStore {
       ...(typeof input.ttsVoice === "string" && TTS_VOICES.includes(input.ttsVoice as TtsVoice) ? { ttsVoice: input.ttsVoice as TtsVoice } : {}),
       ...(typeof input.ttsSpeed === "number" && Number.isFinite(input.ttsSpeed) ? { ttsSpeed: Math.max(0.75, Math.min(1.5, input.ttsSpeed)) } : {}),
       ...(typeof input.guideTiming === "string" && GUIDE_TIMINGS.includes(input.guideTiming as GuideTiming) ? { guideTiming: input.guideTiming as GuideTiming } : {}),
+      ...(typeof input.aiProvider === "string" && AI_PROVIDERS.includes(input.aiProvider as AiProvider) ? { aiProvider: input.aiProvider as AiProvider } : {}),
+      ...(typeof input.aiModel === "string" && input.aiModel.trim() ? { aiModel: input.aiModel.trim().slice(0, 160) } : {}),
+      ...(typeof input.aiBaseUrl === "string" ? { aiBaseUrl: input.aiBaseUrl.trim().slice(0, 500) } : {}),
     };
     data.preferences = next; this.write(data); return { ...next };
   }
@@ -145,6 +153,9 @@ function normalizePreferences(value: unknown): Preferences {
     ttsVoice: typeof input.ttsVoice === "string" && TTS_VOICES.includes(input.ttsVoice as TtsVoice) ? input.ttsVoice as TtsVoice : "coral",
     ttsSpeed: typeof input.ttsSpeed === "number" && Number.isFinite(input.ttsSpeed) ? Math.max(0.75, Math.min(1.5, input.ttsSpeed)) : 1,
     guideTiming: typeof input.guideTiming === "string" && GUIDE_TIMINGS.includes(input.guideTiming as GuideTiming) ? input.guideTiming as GuideTiming : "adaptive",
+    aiProvider: typeof input.aiProvider === "string" && AI_PROVIDERS.includes(input.aiProvider as AiProvider) ? input.aiProvider as AiProvider : "openai",
+    aiModel: typeof input.aiModel === "string" && input.aiModel.trim() ? input.aiModel.trim().slice(0, 160) : "gpt-5.6-luna",
+    aiBaseUrl: typeof input.aiBaseUrl === "string" ? input.aiBaseUrl.trim().slice(0, 500) : "",
   };
 }
 
