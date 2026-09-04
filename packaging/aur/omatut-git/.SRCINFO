@@ -1,6 +1,6 @@
 pkgbase = omatut-git
 	pkgdesc = Screen-aware learning companion for Omarchy
-	pkgver = 0.6.0.alpha.0.r0.g33b9bce
+	pkgver = 0.6.0.alpha.0.r0.g7a7eee1
 	pkgrel = 1
 	url = https://github.com/benryanx/omatut
 	arch = any

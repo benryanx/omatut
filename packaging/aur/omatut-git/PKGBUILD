@@ -1,7 +1,7 @@
 # Maintainer: Benjamin Ryan <12219713+benryanx@users.noreply.github.com>
 
 pkgname=omatut-git
-pkgver=0.6.0.alpha.0.r0.g33b9bce
+pkgver=0.6.0.alpha.0.r0.g7a7eee1
 pkgrel=1
 pkgdesc="Screen-aware learning companion for Omarchy"
 arch=('any')
@@ -16,7 +16,7 @@ b2sums=('SKIP')
 
 pkgver() {
   cd "$srcdir/$pkgname"
-  git describe --long --tags --always | sed 's/^v//;s/-/.r/;s/-/./g'
+  git describe --long --tags --always | sed 's/^v//;s/-\([0-9][0-9]*\)-g/.r\1.g/;s/-/./g'
 }
 
 package() {
