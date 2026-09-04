@@ -3,7 +3,7 @@ const state = { captureId: null, keyConfigured: false, voiceRecording: false, vo
 
 const ui = {
   title: $("#view-title"), eyebrow: $("#view-eyebrow"),
-  voice: $("#voice-button"), observation: $("#observation-text"), recommendation: $("#recommendation-text"),
+  voice: $("#voice-button"), observation: $("#observation-text"), recommendation: $("#recommendation-text"), showRecommendation: $("#show-recommendation"), moreRecommendations: $("#more-recommendations"),
   stats: { lessons: $("#stat-lessons"), shortcuts: $("#stat-shortcuts"), topics: $("#stat-topics"), streak: $("#stat-streak") },
   learning: $("#learning-lessons"), clearLearning: $("#clear-learning"),
   onboarding: $("#onboarding-dialog"), onboardingForm: $("#onboarding-form"), onboardingHistory: $("#onboarding-history"), onboardingTts: $("#onboarding-tts"), onboardingVoice: $("#onboarding-voice"), onboardingProvider: $("#onboarding-provider"), onboardingModel: $("#onboarding-model"), onboardingEndpoint: $("#onboarding-endpoint"), onboardingEndpointRow: $("#onboarding-endpoint-row"), onboardingKey: $("#onboarding-api-key"), onboardingKeyRow: $("#onboarding-key-row"), onboardingKeyLabel: $("#onboarding-key-label"), onboardingKeyHelp: $("#onboarding-key-help"), onboardingPreview: $("#onboarding-preview"),
@@ -24,6 +24,7 @@ async function loadApp() {
     state.keyConfigured = status.keyConfigured; state.voiceRecording = Boolean(status.voice?.recording); state.voiceBusy = Boolean(status.voice?.busy);
     state.preferences = home.preferences; state.lessons = home.lessons; updateVoice(); renderHome(home);
     if (!home.preferences.onboardingComplete) { populateOnboarding(home.preferences); ui.onboarding.showModal(); }
+    else void refreshObservation();
   } catch (error) { showToast(error.message); }
 }
 
@@ -49,7 +50,22 @@ function renderHome(home) {
   const observation = home.observations?.[0];
   ui.observation.textContent = observation?.observation || "Your first observation arrives after five learnings.";
   ui.recommendation.textContent = observation?.recommendation || "Explore one part of Omarchy and ask OmaTut when you want a hand.";
+  ui.showRecommendation.disabled = !observation; ui.moreRecommendations.disabled = !state.keyConfigured;
   populateSettings(home.preferences);
+}
+
+async function refreshObservation() {
+  setBusy(ui.moreRecommendations, true, "Reflecting…");
+  try { await request("/api/learning/observation", { method: "POST" }); await reloadHome(); }
+  catch (error) { console.warn("Could not refresh OmaTut observation:", error); }
+  finally { setBusy(ui.moreRecommendations, false, "More"); }
+}
+
+async function showRecommendation() {
+  setBusy(ui.showRecommendation, true, "Preparing…");
+  try { await request("/api/learning/recommendation/show", { method: "POST" }); showToast("Your next lesson is ready on screen."); }
+  catch (error) { showToast(error.message); }
+  finally { setBusy(ui.showRecommendation, false, "Show me"); }
 }
 
 function renderLessons(container, lessons, deletable) {
@@ -149,6 +165,7 @@ ui.settingsForm.addEventListener("submit", async event => {
 
 document.querySelectorAll("[data-view-target]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.viewTarget)));
 ui.voice.addEventListener("click", toggleVoice);
+ui.showRecommendation.addEventListener("click", showRecommendation); ui.moreRecommendations.addEventListener("click", refreshObservation);
 ui.settingsButton.addEventListener("click", openSettings); ui.settingsClose.addEventListener("click", () => ui.settings.close());
 ui.onboardingPreview.addEventListener("click", () => previewVoice(ui.onboardingVoice, null, ui.onboardingKey, ui.onboardingPreview));
 ui.settingsPreview.addEventListener("click", () => previewVoice(ui.ttsVoice, ui.ttsSpeed, ui.aiProvider.value === "openai" ? ui.apiKey : ui.ttsKey, ui.settingsPreview));

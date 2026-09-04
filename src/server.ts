@@ -12,7 +12,7 @@ import { createTutor } from "./tutor.ts";
 import { dismissOverlay, overlayAvailable, showOverlayGuide, showOverlayStatus } from "./overlay.ts";
 import { transcribeRecording, VoiceRecorder } from "./voice.ts";
 import { LearningStore, type AiProvider, type Preferences, type TtsVoice } from "./learning.ts";
-import { observeLearnings, OpenAICompanion } from "./companion.ts";
+import { explainRecommendation, observeLearnings, OpenAICompanion } from "./companion.ts";
 import { OpenAISpeech, SpeechPlayer } from "./speech.ts";
 import { playActivationPing } from "./sound.ts";
 import { LiveUpdates } from "./live.ts";
@@ -63,9 +63,22 @@ async function api(req: IncomingMessage, res: ServerResponse, url: URL): Promise
     const preferences = learning.snapshot().preferences;
     return json(res, { ready: true, keyConfigured: tutorConfigured(preferences), openAIKeyConfigured: Boolean(getOpenAIKey()), captureReady: Boolean(captures.get()), overlayConnected, voice: { recording: voice.recording, busy: voiceBusy }, preferences, context });
   }
-  if (req.method === "GET" && url.pathname === "/api/home") {
-    void maybeCreateObservation().catch(error => console.error("Learning observation failed:", error));
-    return json(res, learning.snapshot());
+  if (req.method === "GET" && url.pathname === "/api/home") return json(res, learning.snapshot());
+  if (req.method === "POST" && url.pathname === "/api/learning/observation") {
+    const observation = await createObservation(true);
+    return json(res, { observation });
+  }
+  if (req.method === "POST" && url.pathname === "/api/learning/recommendation/show") {
+    const snapshot = learning.snapshot(); const recommendation = snapshot.observations[0]?.recommendation;
+    if (!recommendation) throw new Error("Refresh your learning observation before opening a recommendation.");
+    const preferences = snapshot.preferences; const provider = preferences.aiProvider;
+    if (!tutorConfigured(preferences)) throw new Error("Finish setting up your AI tutor in Settings first.");
+    await showOverlayStatus("thinking", "Preparing your next lesson…");
+    const guide = await explainRecommendation({ provider, model: preferences.aiModel, baseUrl: preferences.aiBaseUrl, apiKey: provider === "ollama" ? null : getProviderKey(provider) }, recommendation);
+    const answer = { ...guide, targetLabel: null, targetX: null, targetY: null, confidence: "high" as const, needsMoreContext: false };
+    await showOverlayGuide(answer, null, preferences.guideTiming);
+    const openAIKey = getOpenAIKey(); if (preferences.ttsEnabled && openAIKey) void speakText(spokenAnswer(answer), preferences, openAIKey).catch(error => console.error("Speech playback failed:", error));
+    return json(res, { ok: true });
   }
   if (req.method === "PUT" && url.pathname === "/api/preferences") {
     const preferences = learning.updatePreferences(await jsonBody(req) as Partial<Preferences>);
@@ -169,23 +182,24 @@ async function teach(question: string, capture: Capture): Promise<Record<string,
   await showOverlayGuide(answer, capture, preferences.guideTiming);
   const lesson = learning.addLesson(question, answer, context);
   if (lesson) learningUpdates.publish();
-  if (lesson) void maybeCreateObservation().catch(error => console.error("Learning observation failed:", error));
+  if (lesson) void createObservation(false).catch(error => console.error("Learning observation failed:", error));
   const openAIKey = getOpenAIKey();
   if (preferences.ttsEnabled && openAIKey) void speakText(spokenAnswer(answer), preferences, openAIKey).catch(error => console.error("Speech playback failed:", error));
   return { answer, context, lesson };
 }
 
-async function maybeCreateObservation(): Promise<void> {
-  if (observationBusy) return;
+async function createObservation(force: boolean): Promise<ReturnType<LearningStore["addObservation"]> | null> {
+  if (observationBusy) return null;
   const snapshot = learning.snapshot(); const count = snapshot.lessons.length;
   const lastCount = snapshot.observations[0]?.lessonCount || 0;
-  if (count < 5 || count - lastCount < 5) return;
+  if (!count || (!force && (count < 5 || count - lastCount < 5))) return null;
+  if (!tutorConfigured(snapshot.preferences)) return null;
   observationBusy = true;
   try {
     const preferences = snapshot.preferences;
     const provider = preferences.aiProvider;
     const observation = await observeLearnings({ provider, model: preferences.aiModel, baseUrl: preferences.aiBaseUrl, apiKey: provider === "ollama" ? null : getProviderKey(provider) }, snapshot.lessons);
-    learning.addObservation(count, observation.observation, observation.recommendation); learningUpdates.publish();
+    const saved = learning.addObservation(count, observation.observation, observation.recommendation); learningUpdates.publish(); return saved;
   } finally { observationBusy = false; }
 }
 

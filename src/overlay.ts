@@ -15,10 +15,10 @@ export async function showOverlayStatus(mode: "listening" | "seeing" | "thinking
   await call("status", JSON.stringify({ mode, message }), run);
 }
 
-export async function showOverlayGuide(answer: TutorAnswer, capture: Capture, timing: GuideTiming = "adaptive", run: CommandRunner = runCommand): Promise<void> {
-  const hasTarget = answer.targetX !== null && answer.targetY !== null;
-  const targetX = hasTarget ? capture.geometry.x + capture.geometry.width * answer.targetX! / 1000 : null;
-  const targetY = hasTarget ? capture.geometry.y + capture.geometry.height * answer.targetY! / 1000 : null;
+export async function showOverlayGuide(answer: TutorAnswer, capture: Capture | null, timing: GuideTiming = "adaptive", run: CommandRunner = runCommand): Promise<void> {
+  const hasTarget = Boolean(capture) && answer.targetX !== null && answer.targetY !== null;
+  const targetX = hasTarget ? capture!.geometry.x + capture!.geometry.width * answer.targetX! / 1000 : null;
+  const targetY = hasTarget ? capture!.geometry.y + capture!.geometry.height * answer.targetY! / 1000 : null;
   await call("guide", JSON.stringify({
     targetX, targetY,
     label: answer.targetLabel || "Here",
