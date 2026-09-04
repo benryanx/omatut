@@ -2,4 +2,7 @@
 coverage/
 dist/
 node_modules/
-
+packaging/aur/omatut-git/omatut-git/
+packaging/aur/omatut-git/pkg/
+packaging/aur/omatut-git/src/
+packaging/aur/omatut-git/*.pkg.tar.*

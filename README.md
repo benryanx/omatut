@@ -36,6 +36,27 @@ Launch **OmaTut** from the app launcher. In Settings, choose an AI tutor: OpenAI
 
 The installer adds user-owned desktop integration, a systemd user service, launcher, icon, Omarchy theme template, and the `benryanx.omatut` shell overlay plugin. It does not alter your Hyprland bindings.
 
+### Omarchy Plugin Marketplace installation
+
+The marketplace installs the overlay repository first. Run the included setup once afterward to install the companion service and launchers:
+
+```bash
+omarchy plugin add https://github.com/benryanx/omatut.git --enable
+~/.config/omarchy/plugins/benryanx.omatut/scripts/install-desktop.sh
+```
+
+External runtime dependencies are Omarchy 4.x, Node.js 24 or newer, Chromium, Voxtype, PipeWire, Secret Service (`secret-tool`), `grim`, `slurp`, and `libcanberra`. The planned `omatut-git` AUR recipe declares these dependencies automatically.
+
+### Remove OmaTut
+
+Run the user-owned removal helper before removing the source or AUR package:
+
+```bash
+omatut-uninstall
+```
+
+This disables the service and removes the OmaTut launcher, theme hook, and shell overlay. It deliberately preserves the local learning journal in `~/.local/state/omatut`; users may archive or delete that directory separately.
+
 ## Navi-style voice guidance
 
 Run `omatut-voice` once and speak your question. Run it again to stop listening. OmaTut then hides its overlay, captures only the focused monitor, transcribes locally with Voxtype, and sends the transcript plus screenshot for guidance. Run `omatut-dismiss` to cancel recording or hide the guide.

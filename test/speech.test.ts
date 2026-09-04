@@ -4,7 +4,7 @@ import { OpenAISpeech } from "../src/speech.ts";
 
 test("speech generation uses ephemeral WAV output and selected preferences", async () => {
   let request: RequestInit | undefined;
-  const speech = new OpenAISpeech("sk-test-key-abcdefghijkl", async (_url, init) => {
+  const speech = new OpenAISpeech("dummy-provider-token", async (_url, init) => {
     request = init; return new Response(Buffer.from("wave"), { status: 200, headers: { "Content-Type": "audio/wav" } });
   });
   const audio = await speech.create("  Try Super plus K. ", "marin", 1.1);

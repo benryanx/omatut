@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "id": "benryanx.omatut",
   "name": "OmaTut Screen Guide",
-  "version": "0.2.0",
+  "version": "0.6.0-alpha.0",
   "author": "Ben Ryan",
-  "description": "A click-through buddy, target marker, and teaching bubble for OmaTut",
+  "license": "MIT",
+  "description": "Screen-aware Omarchy tutor with voice guidance, learning history, and a click-through teaching overlay",
   "kinds": ["overlay"],
   "keepLoaded": true,
   "entryPoints": {
     "overlay": "Overlay.qml"
   }
 }
-

@@ -1,0 +1,31 @@
+# Maintainer: Benjamin Ryan <12219713+benryanx@users.noreply.github.com>
+
+pkgname=omatut-git
+pkgver=0.6.0.alpha.0.r0.g33b9bce
+pkgrel=1
+pkgdesc="Screen-aware learning companion for Omarchy"
+arch=('any')
+url="https://github.com/benryanx/omatut"
+license=('MIT')
+depends=('bash' 'chromium' 'grim' 'libcanberra' 'libsecret' 'nodejs>=24' 'omarchy' 'pipewire' 'slurp' 'voxtype-bin')
+makedepends=('git')
+provides=('omatut')
+conflicts=('omatut')
+source=("${pkgname}::git+https://github.com/benryanx/omatut.git")
+b2sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/$pkgname"
+  git describe --long --tags --always | sed 's/^v//;s/-/.r/;s/-/./g'
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  install -d "$pkgdir/usr/lib/omatut"
+  cp -a public scripts src Overlay.qml manifest.json package.json README.md LICENSE "$pkgdir/usr/lib/omatut/"
+  install -d "$pkgdir/usr/bin"
+  printf '%s\n' '#!/usr/bin/env bash' 'exec /usr/lib/omatut/scripts/install-desktop.sh "$@"' > "$pkgdir/usr/bin/omatut-install"
+  chmod 755 "$pkgdir/usr/bin/omatut-install"
+  install -Dm755 scripts/uninstall-desktop.sh "$pkgdir/usr/bin/omatut-uninstall"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
